@@ -50,7 +50,7 @@ try
     $hashtag = mysql_real_escape_string($hashtag);
     $text = mysql_real_escape_string($text);
     $title = mysql_real_escape_string($title);
-    $addsql="update stickers set hashtag = ".$hashtag."', text='".$text."', title='".$title."', x=".$x.", y=".$y." where id=".$id;
+    $addsql="update stickers set hashtag = '".$hashtag."', text='".$text."', title='".$title."', x=".$x.", y=".$y." where id=".$id;
     $log->lwrite("hashtag=".$hashtag."text=".$text."\nsql=".$addsql);
     $result = mysql_query($addsql);
 
