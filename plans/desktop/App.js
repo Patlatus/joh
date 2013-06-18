@@ -119,7 +119,7 @@ Ext.define('MyDesktop.App', {
                         if (result.success) {
                             window.username = result.username;
                             window.userid = result.userid;
-                            window.currentLanguage = result.language || 'en';
+                            //window.currentLanguage = result.language || 'en';
                         }
                         Ext.Msg.alert(result.success?(window.successtitle || 'Success'):(window.failedtitle || 'Failed'), result.message);
                         return {
@@ -328,15 +328,16 @@ Ext.define('MyDesktop.App', {
                 }
                 window.userLoaded = true;
                 window.userLogged = decodedText.success;
+                window.currentLanguage = (window.navigator.systemLanguage || window.navigator.userLanguage || window.navigator.language || 'en').substr(0, 2);
                 if (decodedText.success) {
                     window.username = decodedText.username;
                     window.userid = decodedText.userid;
-                    window.currentLanguage = decodedText.language || 'en';
+                    //window.currentLanguage = decodedText.language || 'en';
                     
                     //alert((window.successtitle || 'success: ') + decodedText.message + '; user = ' + decodedText.username);
                 } else {
                     //alert((window.successtitle || 'success: ') + decodedText.message);
-                    window.currentLanguage = (window.navigator.systemLanguage || window.navigator.userLanguage || window.navigator.language || 'en').substr(0, 2);
+                    //window.currentLanguage = (window.navigator.systemLanguage || window.navigator.userLanguage || window.navigator.language || 'en').substr(0, 2);
                     
                 }
                 if (window.settingsLoaded) {
