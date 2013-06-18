@@ -23,4 +23,19 @@
 <usernamealreadyused>Інший користувач вже використовує таке ім'я користувача.</usernamealreadyused>
 <invalidemail>Невалідний імейл.</invalidemail>
 <passwordsarenotidentical>Паролі не співпадають.</passwordsarenotidentical>
+<settings>Налаштування</settings>
+<changesettings>Змінити налаштування</changesettings>
+<addnote>Додати запис</addnote>
+<addnewnote>Додати новий запис</addnewnote>
+<editnote>Редагувати запис</editnote>
+<applychanges>Застосувати зміни</applychanges>
+<titletext>Заголовок</titletext>
+<removenotetitle>Агов!</removenotetitle>
+<removenotetext>Чи Ви справді бажаєте видалити цей милий і прекрасний запис? Цю дію не можна скасувати.</removenotetext>
+<duplicate>Дублювати</duplicate>
+<edit>Редагувати</edit>
+<remove>Видалити</remove>
+<yes>Так</yes>
+<no>Ні</no>
+<start>Старт</start>
 </root>

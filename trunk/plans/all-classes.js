@@ -75667,7 +75667,7 @@ Ext.define('MyDesktop.Notepad', {
 
     init : function(){
         this.launcher = {
-            text: 'Додати запис',
+            text: window.addnote || 'Додати запис',
             iconCls:'notepad'
         }
     },
@@ -75682,7 +75682,7 @@ Ext.define('MyDesktop.Notepad', {
         if (!win){
             win = desktop.createWindow({
                 id: 'notepad',
-                title:'Додати новий запис',//'Add new note',
+                title:window.addnewnote || 'Додати новий запис',//'Add new note',
                 width:600,
                 height:400,
                 iconCls: 'notepad',
@@ -75697,12 +75697,11 @@ Ext.define('MyDesktop.Notepad', {
                 bbar: [
                     { 
                         xtype: 'button',
-                        text: 'Додати новий запис',
+                        text: window.addnewnote || 'Додати новий запис',
                         listeners: {
                             click: {
                                 scope: this,
                                 fn: function() {
-                                    //alert(Ext.getCmp('notepad-editor').getValue());
                                     var data = {
                                         title : this.ps(Ext.getCmp('title-editor').getValue()),
                                         x     : this.app.getDesktop().getWindow('notepad').x,
@@ -75725,8 +75724,7 @@ Ext.define('MyDesktop.Notepad', {
                                                 showDuplicateButton : false,
                                                 showEditButton      : true,
                                                 showRemoveButton    : true
-                                            });//var text = response.responseText;
-                                            //alert("addstick1.php success:\n"+text);
+                                            });
                                         }
                                     });
                                     this.app.getDesktop().getWindow('notepad').close();
@@ -75749,7 +75747,7 @@ Ext.define('MyDesktop.Notepad', {
                         },
                         items: [
                             {
-                                html: 'Заголовок:'
+                                html: window.titletext || 'Заголовок:'
                             },
                             {
                                 xtype: 'textfield',
@@ -75777,7 +75775,7 @@ Ext.define('MyDesktop.Notepad', {
         panelWin = desktop.getWindow(idn);
         win = desktop.createWindow({
             id: 'notepad',
-            title:'Редагувати запис',//'Add new note',
+            title:window.editnote || 'Редагувати запис',//'Add new note',
             width:600,
             height:400,
             x: panelWin.x,
@@ -75794,7 +75792,7 @@ Ext.define('MyDesktop.Notepad', {
             bbar: [
                 { 
                     xtype: 'button',
-                    text: 'Застосувати зміни',
+                    text: window.applychanges || 'Застосувати зміни',
                     listeners: {
                         click: {
                             scope: this,
@@ -75845,7 +75843,7 @@ Ext.define('MyDesktop.Notepad', {
                     },
                     items: [
                         {
-                            html: 'Заголовок:'
+                            html: window.titletext || 'Заголовок:'
                         },
                         {
                             xtype: 'textfield',
@@ -75870,7 +75868,7 @@ Ext.define('MyDesktop.Notepad', {
         panelWin = desktop.getWindow(idn);
         win = desktop.createWindow({
             id: 'notepad',
-            title:'Редагувати запис',//'Add new note',
+            title:window.editnote || 'Редагувати запис',//'Add new note',
             width:600,
             height:400,
             x: panelWin.x,
@@ -75887,7 +75885,7 @@ Ext.define('MyDesktop.Notepad', {
             bbar: [
                 { 
                     xtype: 'button',
-                    text: 'Застосувати зміни',
+                    text: window.applychanges || 'Застосувати зміни',
                     listeners: {
                         click: {
                             scope: this,
@@ -75942,7 +75940,7 @@ Ext.define('MyDesktop.Notepad', {
                     },
                     items: [
                         {
-                            html: 'Заголовок:'
+                            html: window.titletext || 'Заголовок:'
                         },
                         {
                             xtype: 'textfield',
@@ -75963,7 +75961,7 @@ Ext.define('MyDesktop.Notepad', {
     },
     
     remove : function (idn) {
-        Ext.Msg.confirm("Агов!", "Чи Ви справді бажаєте видалити цей милий і прекрасний запис? Цю дію не можна скасувати.", function(button) {
+        Ext.Msg.confirm(window.removenotetitle || "Агов!", window.removenotetext || "Чи Ви справді бажаєте видалити цей милий і прекрасний запис? Цю дію не можна скасувати.", function(button) {
             if (button === 'yes') {
                 Ext.Ajax.request({
                     url: 'rs.php',
@@ -75989,7 +75987,7 @@ Ext.define('MyDesktop.Notepad', {
             if (options.showDuplicateButton) {
                 toolsConfig.push({
                     type:'plus',
-                    tooltip: 'Дублювати',//'Редагувати',
+                    tooltip: window.duplicate || 'Дублювати',//'Редагувати',
                     scope:this.app,
                     handler: function(event, toolEl, panel){
                         this.getModule("notepad").duplicate(panel.ownerCt.id);// refresh logic
@@ -75999,7 +75997,7 @@ Ext.define('MyDesktop.Notepad', {
             if (options.showEditButton) {
                 toolsConfig.push({
                     type:'gear',
-                    tooltip: 'Редагувати',
+                    tooltip: window.edit || 'Редагувати',
                     scope:this.app,
                     handler: function(event, toolEl, panel){
                         this.getModule("notepad").edit(panel.ownerCt.id);// refresh logic
@@ -76009,7 +76007,7 @@ Ext.define('MyDesktop.Notepad', {
             if (options.showRemoveButton) {
                 toolsConfig.push({
                     type:'minus',
-                    tooltip: 'Видалити',
+                    tooltip: window.remove || 'Видалити',
                     scope:this.app,
                     handler: function(event, toolEl, panel){
                         this.getModule("notepad").remove(panel.ownerCt.id);// show help here
@@ -80934,6 +80932,7 @@ Ext.define('MyDesktop.App', {
     extend: 'Ext.ux.desktop.App',
     requires: 
         ['Ext.window.MessageBox',
+        'Ext.form.Panel',
         'Ext.ux.desktop.ShortcutModel',
         'Ext.ux.desktop.Desktop',
         'MyDesktop.SystemStatus',
@@ -80944,7 +80943,8 @@ Ext.define('MyDesktop.App', {
         'MyDesktop.Settings'],
     getModules : function(){
         return [
-            new MyDesktop.Notepad()];
+            new MyDesktop.Notepad()
+        ];
     },
     
     getDesktopConfig:function () {
@@ -80953,7 +80953,7 @@ Ext.define('MyDesktop.App', {
             {
                 contextMenuItems: [
                     {
-                        text:'Змінити налаштування',
+                        text:window.changesettings || 'Змінити налаштування',
                         handler:me.onSettings,
                         scope:me
                     }
@@ -80971,13 +80971,13 @@ Ext.define('MyDesktop.App', {
     getStartConfig :function() {
         var me = this,ret = me.callParent();
         return Ext.apply(ret, {
-            title:'Адмін',
+            title:window.username,
             iconCls:'user',
             height:300,
             toolConfig:{
                 width:120,items:[
                     {
-                        text:'Налаштування',
+                        text:window.settings || 'Налаштування',
                         iconCls:'settings',
                         handler:me.onSettings,
                         scope:me
@@ -80999,7 +80999,7 @@ Ext.define('MyDesktop.App', {
         return Ext.apply(ret, {
             quickStart:[
                 {
-                    name:'Додати запис',
+                    name:window.addnote || 'Додати запис',
                     iconCls:'notepad',
                     module:'notepad'
                 }
@@ -81020,208 +81020,200 @@ Ext.define('MyDesktop.App', {
     },
     
     updateUserLanguage : function () {
-            if (window.languagesHash[window.currentLanguage] === 'present') {
+        if (window.languagesHash[window.currentLanguage] === 'present') {
+            
+        } else {
+            window.currentLanguage = 'en';
+        }
+        Ext.Ajax.request({
+            url: window.currentLanguage + '.xml',
+            params: {
                 
-            } else {
-                window.currentLanguage = 'en';
-            }
-            Ext.Ajax.request({
-                    url: window.currentLanguage + '.xml',
-                    params: {
-                        
+            },
+            success: Ext.bind(function(response) {
+                if (response && response.responseXML && response.responseXML.childNodes) {
+                    var root = response.responseXML.childNodes[Ext.isIE ? 1 : 0];
+                    if (root && root.nodeName === 'root') {
+                        var currentNode = Ext.isIE ? root.firstChild : root.firstElementChild;
+                        while (currentNode) {
+                            window[currentNode.nodeName] = Ext.isIE ? currentNode.text : currentNode.textContent;
+                            currentNode = Ext.isIE ? currentNode.nextSibling : currentNode.nextElementSibling;
+                        }
+                    }
+                }
+
+                MyReader = {
+                    read : function (xhr) {
+                        var result = Ext.decode(xhr.responseText);
+                        window.userLogged = result.success;
+                        if (result.success) {
+                            window.username = result.username;
+                            window.userid = result.userid;
+                            window.currentLanguage = result.language || 'en';
+                        }
+                        Ext.Msg.alert(result.success?(window.successtitle || 'Success'):(window.failedtitle || 'Failed'), result.message);
+                        return {
+                            success : result.success,
+                            records: []
+                        }
+                    }
+                };
+    
+                window.regForm = Ext.create('Ext.form.Panel', {
+                    title: (window.regformtitle || 'Реєстраційна форма'),//
+                    bodyPadding: 5,
+                    width: 350,
+
+                    // The form will submit an AJAX request to this URL when submitted
+                    url: 'signup.php',
+                    
+                    hidden: true,
+
+                    // Fields will be arranged vertically, stretched to full width
+                    layout: 'anchor',
+                    defaults: {
+                        anchor: '100%'
                     },
-                    success: Ext.bind(function(response) {
-                        if (response && response.responseXML && response.responseXML.childNodes) {
-                            var root = response.responseXML.childNodes[Ext.isIE ? 1 : 0];
-                            if (root && root.nodeName === 'root') {
-                                var currentNode = Ext.isIE ? root.firstChild : root.firstElementChild;
-                                while (currentNode) {
-                                    window[currentNode.nodeName] = Ext.isIE ? currentNode.text : currentNode.textContent;
-                                    currentNode = Ext.isIE ? currentNode.nextSibling : currentNode.nextElementSibling;
-                                }
+                    errorReader : MyReader,
+
+                    // The fields
+                    defaultType: 'textfield',
+                    fieldDefaults: {
+                        labelWidth: 130,
+                        msgTarget : 'side'
+                    },
+                    items: [{
+                        fieldLabel: (window.usernamelabel || 'Юзернейм'),
+                        name: 'username',
+                        allowBlank: false
+                    },{
+                        fieldLabel: (window.passwordlabel || 'Пароль'),
+                        name: 'password',
+                        inputType: 'password',
+                        allowBlank: false
+                    },{
+                        fieldLabel: (window.passverlabel || 'Пароль(перевірка)'),
+                        name: 'passverif',
+                        inputType: 'password',
+                        allowBlank: false
+                    },{
+                        fieldLabel: (window.emaillabel || 'Електронна пошта'),
+                        name: 'email',
+                        vtype: 'email',
+                        allowBlank: false
+                    }],
+
+                    // Reset and Submit buttons
+                    buttons: [{
+                        text: (window.resetlabel || 'Очистити'),
+                        handler: function() {
+                            this.up('form').getForm().reset();
+                        }
+                    }, {
+                        text: (window.signuplabel || 'Зареєструватися'),
+                        formBind: true, //only enabled once the form is valid
+                        disabled: true,
+                        handler: function() {
+                            var form = this.up('form').getForm();
+                            if (form.isValid()) {
+                                form.submit({
+                                    params: {
+                                        language: window.currentLanguage
+                                    },
+                                
+                                    success: function(form, action) {
+                                        regForm.hide();
+                                        loginForm.show();
+                                       //Ext.Msg.alert('Success', action.result.msg);
+                                    },
+                                    failure: function(form, action) {
+                                        //Ext.Msg.alert('Failed', action.result.msg);
+                                    }
+                                });
                             }
                         }
-
-                                Ext.onReady(function () {
-        
-            MyReader = {
-                read : function (xhr) {
-                    var result = Ext.decode(xhr.responseText);
-                    Ext.Msg.alert(result.success?(window.successtitle || 'Success'):(window.failedtitle || 'Failed'), result.message);
-                    window.userLogged = result.success;
-                    if (result.success) {
-                        window.username = result.username;
-                        window.userid = result.userid;
-                        window.currentLanguage = result.language || 'en';
-                    }
-                    return {
-                        success : result.success,
-                        records: []
-                    }
-              }
-           };
-        
-            window.regForm = Ext.create('Ext.form.Panel', {
-    title: (window.regformtitle || 'Реєстраційна форма'),//
-    bodyPadding: 5,
-    width: 350,
-
-    // The form will submit an AJAX request to this URL when submitted
-    url: 'signup.php',
-    
-    hidden: true,
-
-    // Fields will be arranged vertically, stretched to full width
-    layout: 'anchor',
-    defaults: {
-        anchor: '100%'
-    },
-    errorReader : MyReader,
-
-    // The fields
-    defaultType: 'textfield',
-    fieldDefaults: {
-        labelWidth: 130,
-        msgTarget : 'side'
-    },
-    items: [{
-        fieldLabel: (window.usernamelabel || 'Юзернейм'),
-        name: 'username',
-        allowBlank: false
-    },{
-        fieldLabel: (window.passwordlabel || 'Пароль'),
-        name: 'password',
-        inputType: 'password',
-        allowBlank: false
-    },{
-        fieldLabel: (window.passverlabel || 'Пароль(перевірка)'),
-        name: 'passverif',
-        inputType: 'password',
-        allowBlank: false
-    },{
-        fieldLabel: (window.emaillabel || 'Електронна пошта'),
-        name: 'email',
-        vtype: 'email',
-        allowBlank: false
-    }],
-
-    // Reset and Submit buttons
-    buttons: [{
-        text: (window.resetlabel || 'Очистити'),
-        handler: function() {
-            this.up('form').getForm().reset();
-        }
-    }, {
-        text: (window.signuplabel || 'Зареєструватися'),
-        formBind: true, //only enabled once the form is valid
-        disabled: true,
-        handler: function() {
-            var form = this.up('form').getForm();
-            if (form.isValid()) {
-                form.submit({
-                    params: {
-                        language: window.currentLanguage
-                    },
-                
-                    success: function(form, action) {
-                        regForm.hide();
-                        loginForm.show();
-                       //Ext.Msg.alert('Success', action.result.msg);
-                    },
-                    failure: function(form, action) {
-                        //Ext.Msg.alert('Failed', action.result.msg);
-                    }
+                    }],
+                    renderTo: Ext.getBody()
                 });
-            }
-        }
-    }],
-    renderTo: Ext.getBody()
-});
 
 
-            window.loginForm = Ext.create('Ext.form.Panel', {
-                title: (window.logformtitle || 'Форма логування'),//
-                bodyPadding: 5,
-                width: 200,
+                window.loginForm = Ext.create('Ext.form.Panel', {
+                    title: (window.logformtitle || 'Форма логування'),//
+                    bodyPadding: 5,
+                    width: 200,
 
-                // The form will submit an AJAX request to this URL when submitted
-                url: 'login.php',
-                hidden: true,
-                // Fields will be arranged vertically, stretched to full width
-                layout: 'anchor',
-                defaults: {
-                    anchor: '100%'
-                },
-                errorReader : MyReader,
+                    // The form will submit an AJAX request to this URL when submitted
+                    url: 'login.php',
+                    hidden: true,
+                    // Fields will be arranged vertically, stretched to full width
+                    layout: 'anchor',
+                    defaults: {
+                        anchor: '100%'
+                    },
+                    errorReader : MyReader,
 
-                defaultType: 'textfield',
-                fieldDefaults: {
-                    labelWidth: 80,
-                    msgTarget : 'side'
-                },
-                items: [{
-                    fieldLabel: (window.usernamelabel || 'Юзернейм'),
-                    name: 'username',
-                    allowBlank: false
-                },{
-                    fieldLabel: (window.passwordlabel || 'Пароль'),
-                    name: 'password',
-                    inputType: 'password',
-                    allowBlank: false
-                }],
-                // Reset and Submit buttons
-                buttons: [{
-                    text: (window.reglabel || 'Зареєструватися'),
-                    handler: function() {
-                        loginForm.hide();
-                        regForm.show();
-                        alert(window.alertmessage2 || 'поглянь тепер на форму для логування');//this.up('form').getForm().reset();
-                    }
-                }, {
-                    text: (window.loglabel || 'Login'),
-                    formBind: true, //only enabled once the form is valid
-                    disabled: true,
-                    handler: function() {
-                        var form = this.up('form').getForm();
-                        if (form.isValid()) {
-                            form.submit({
-                                params: {
-                                    language: window.currentLanguage
-                                },
-                                success: function(form, action) {
-                                    loginForm.hide();
-                                    myDesktopApp.init();
-                                    //myDesktopApp = new MyDesktop.App();//logoutButton.show();
-                                   //Ext.Msg.alert('Success', action.result.msg);
-                                },
-                                failure: function(form, action) {
-                                    //Ext.Msg.alert('Failed', action.result.msg);
-                                }
-                            });
+                    defaultType: 'textfield',
+                    fieldDefaults: {
+                        labelWidth: 80,
+                        msgTarget : 'side'
+                    },
+                    items: [{
+                        fieldLabel: (window.usernamelabel || 'Юзернейм'),
+                        name: 'username',
+                        allowBlank: false
+                    },{
+                        fieldLabel: (window.passwordlabel || 'Пароль'),
+                        name: 'password',
+                        inputType: 'password',
+                        allowBlank: false
+                    }],
+                    // Reset and Submit buttons
+                    buttons: [{
+                        text: (window.reglabel || 'Зареєструватися'),
+                        handler: function() {
+                            loginForm.hide();
+                            regForm.show();
+                            alert(window.alertmessage2 || 'поглянь тепер на форму для логування');//this.up('form').getForm().reset();
                         }
-                    }
-                }],
-                renderTo: Ext.getBody()
-            });
-            
-            if (window.userLogged) {
-                myDesktopApp.init();//myDesktopApp = new MyDesktop.App();//logoutButton.show();
-            } else {
-                window.loginForm.show();
-            }
-
-        });
-                    })
+                    }, {
+                        text: (window.loglabel || 'Login'),
+                        formBind: true, //only enabled once the form is valid
+                        disabled: true,
+                        handler: function() {
+                            var form = this.up('form').getForm();
+                            if (form.isValid()) {
+                                form.submit({
+                                    params: {
+                                        language: window.currentLanguage
+                                    },
+                                    success: function(form, action) {
+                                        loginForm.hide();
+                                        myDesktopApp.init();
+                                    },
+                                    failure: function(form, action) {
+                                        //Ext.Msg.alert('Failed', action.result.msg);
+                                    }
+                                });
+                            }
+                        }
+                    }],
+                    renderTo: Ext.getBody()
                 });
+        
+                if (window.userLogged) {
+                    myDesktopApp.init();
+                } else {
+                    window.loginForm.show();
+                }
+            })
+        });
     },
         
     beforeinit : function () {
         window.settingsLoaded = false;
         window.userLoaded = false;
         
-        
-        Ext.onReady(function (){
-            Ext.Ajax.request({
+        Ext.Ajax.request({
             url: 'settings.xml',
             params: {
                 
@@ -81243,7 +81235,6 @@ Ext.define('MyDesktop.App', {
                         }
                     }
                 }
-                //alert(window.languagesArray);
                 window.settingsLoaded = true;
 
                 if (window.userLoaded) {
@@ -81283,14 +81274,13 @@ Ext.define('MyDesktop.App', {
                 }
             }, this)
         });
-        
-        });
+
     },
     
     init : function () {
         this.callParent(arguments);
-        Ext.Msg.buttonText.yes = 'Так';
-        Ext.Msg.buttonText.no = 'Ні';
+        Ext.Msg.buttonText.yes = window.yes || 'Так';
+        Ext.Msg.buttonText.no = window.no || 'Ні';
         
         var dt = new Date();
         var x = Ext.Date.format(dt, 'Y-m-d');
@@ -81321,7 +81311,7 @@ Ext.define('MyDesktop.App', {
                 var decodedText = Ext.decode(text)
                 }
                 catch (e) {
-                    alert('Error during decoding text:\n' + text);
+                    alert((window.alertmessage1 || 'Error during decoding text:') + '\n' + text);
                 }
                 this.write('text:\n'+text);
                 this.write('decodedText:\n'+decodedText);
@@ -81354,7 +81344,7 @@ Ext.define('MyDesktop.App', {
                     var decodedText = Ext.decode(text)
                 }
                 catch (e) {
-                    alert('Error during decoding text:\n' + text);
+                    alert((window.alertmessage1 || 'Error during decoding text:') + '\n' + text);
                 }
                 this.write('text:\n' + text);
                 this.write('decodedText:\n' + decodedText);
@@ -100816,12 +100806,6 @@ Ext.define('Ext.ux.desktop.TaskBar', {
 
     cls: 'ux-taskbar',
 
-    /**
-     * @cfg {String} startBtnText
-     * The text for the Start Button.
-     */
-    startBtnText: 'Старт',
-
     initComponent: function () {
         var me = this;
 
@@ -100840,7 +100824,7 @@ Ext.define('Ext.ux.desktop.TaskBar', {
                 iconCls: 'ux-start-button-icon',
                 menu: me.startMenu,
                 menuAlign: 'bl-tl',
-                text: me.startBtnText
+                text: window.start || 'Старт'
             },
             me.quickStart,
             {
@@ -100879,7 +100863,6 @@ Ext.define('Ext.ux.desktop.TaskBar', {
         Ext.each(this.quickStart, function (item) {
             ret.items.push({
                 tooltip: { text: item.name, align: 'bl-tl' },
-                //tooltip: item.name,
                 overflowText: item.name,
                 iconCls: item.iconCls,
                 module: item.module,

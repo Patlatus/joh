@@ -23,4 +23,19 @@
 <usernamealreadyused>Another user already use this username.</usernamealreadyused>
 <invalidemail>The email you typed is not valid.</invalidemail>
 <passwordsarenotidentical>The passwords you entered are not identical.</passwordsarenotidentical>
+<settings>Settings</settings>
+<changesettings>Change settings</changesettings>
+<addnote>Add note</addnote>
+<addnewnote>Add new note</addnewnote>
+<editnote>Edit note</editnote>
+<applychanges>Apply changes</applychanges>
+<titletext>Title</titletext>
+<removenotetitle>Hello!</removenotetitle>
+<removenotetext>Do you really want to remove this cute and wonderful note? You will not be able to cancel this action.</removenotetext>
+<duplicate>Duplicate</duplicate>
+<edit>Edit</edit>
+<remove>Remove</remove>
+<yes>Yes</yes>
+<no>No</no>
+<start>Start</start>
 </root>
