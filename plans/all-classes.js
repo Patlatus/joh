@@ -80928,6 +80928,2284 @@ Ext.define('Ext.ux.desktop.ShortcutModel', {
     ]
 });
 
+/**
+ * A mixin for {@link Ext.container.Container} components that are likely to have form fields in their
+ * items subtree. Adds the following capabilities:
+ *
+ * - Methods for handling the addition and removal of {@link Ext.form.Labelable} and {@link Ext.form.field.Field}
+ *   instances at any depth within the container.
+ * - Events ({@link #fieldvaliditychange} and {@link #fielderrorchange}) for handling changes to the state
+ *   of individual fields at the container level.
+ * - Automatic application of {@link #fieldDefaults} config properties to each field added within the
+ *   container, to facilitate uniform configuration of all fields.
+ *
+ * This mixin is primarily for internal use by {@link Ext.form.Panel} and {@link Ext.form.FieldContainer},
+ * and should not normally need to be used directly. @docauthor Jason Johnston <jason@sencha.com>
+ */
+Ext.define('Ext.form.FieldAncestor', {
+
+    /**
+     * @cfg {Object} fieldDefaults
+     * If specified, the properties in this object are used as default config values for each {@link Ext.form.Labelable}
+     * instance (e.g. {@link Ext.form.field.Base} or {@link Ext.form.FieldContainer}) that is added as a descendant of
+     * this container. Corresponding values specified in an individual field's own configuration, or from the {@link
+     * Ext.container.Container#defaults defaults config} of its parent container, will take precedence. See the
+     * documentation for {@link Ext.form.Labelable} to see what config options may be specified in the fieldDefaults.
+     *
+     * Example:
+     *
+     *     new Ext.form.Panel({
+     *         fieldDefaults: {
+     *             labelAlign: 'left',
+     *             labelWidth: 100
+     *         },
+     *         items: [{
+     *             xtype: 'fieldset',
+     *             defaults: {
+     *                 labelAlign: 'top'
+     *             },
+     *             items: [{
+     *                 name: 'field1'
+     *             }, {
+     *                 name: 'field2'
+     *             }]
+     *         }, {
+     *             xtype: 'fieldset',
+     *             items: [{
+     *                 name: 'field3',
+     *                 labelWidth: 150
+     *             }, {
+     *                 name: 'field4'
+     *             }]
+     *         }]
+     *     });
+     *
+     * In this example, field1 and field2 will get labelAlign:'top' (from the fieldset's defaults) and labelWidth:100
+     * (from fieldDefaults), field3 and field4 will both get labelAlign:'left' (from fieldDefaults and field3 will use
+     * the labelWidth:150 from its own config.
+     */
+
+
+    /**
+     * Initializes the FieldAncestor's state; this must be called from the initComponent method of any components
+     * importing this mixin.
+     * @protected
+     */
+    initFieldAncestor: function() {
+        var me = this,
+            onSubtreeChange = me.onFieldAncestorSubtreeChange;
+
+        me.addEvents(
+            /**
+             * @event fieldvaliditychange
+             * Fires when the validity state of any one of the {@link Ext.form.field.Field} instances within this
+             * container changes.
+             * @param {Ext.form.FieldAncestor} this
+             * @param {Ext.form.Labelable} The Field instance whose validity changed
+             * @param {String} isValid The field's new validity state
+             */
+            'fieldvaliditychange',
+
+            /**
+             * @event fielderrorchange
+             * Fires when the active error message is changed for any one of the {@link Ext.form.Labelable} instances
+             * within this container.
+             * @param {Ext.form.FieldAncestor} this
+             * @param {Ext.form.Labelable} The Labelable instance whose active error was changed
+             * @param {String} error The active error message
+             */
+            'fielderrorchange'
+        );
+
+        // Catch addition and removal of descendant fields
+        me.on('add', onSubtreeChange, me);
+        me.on('remove', onSubtreeChange, me);
+
+        me.initFieldDefaults();
+    },
+
+    /**
+     * @private Initialize the {@link #fieldDefaults} object
+     */
+    initFieldDefaults: function() {
+        if (!this.fieldDefaults) {
+            this.fieldDefaults = {};
+        }
+    },
+
+    /**
+     * @private
+     * Handle the addition and removal of components in the FieldAncestor component's child tree.
+     */
+    onFieldAncestorSubtreeChange: function(parent, child) {
+        var me = this,
+            isAdding = !!child.ownerCt;
+
+        function handleCmp(cmp) {
+            var isLabelable = cmp.isFieldLabelable,
+                isField = cmp.isFormField;
+            if (isLabelable || isField) {
+                if (isLabelable) {
+                    me['onLabelable' + (isAdding ? 'Added' : 'Removed')](cmp);
+                }
+                if (isField) {
+                    me['onField' + (isAdding ? 'Added' : 'Removed')](cmp);
+                }
+            }
+            else if (cmp.isContainer) {
+                Ext.Array.forEach(cmp.getRefItems(), handleCmp);
+            }
+        }
+        handleCmp(child);
+    },
+
+    /**
+     * Called when a {@link Ext.form.Labelable} instance is added to the container's subtree.
+     * @param {Ext.form.Labelable} labelable The instance that was added
+     * @protected
+     */
+    onLabelableAdded: function(labelable) {
+        var me = this;
+
+        // buffer slightly to avoid excessive firing while sub-fields are changing en masse
+        me.mon(labelable, 'errorchange', me.handleFieldErrorChange, me, {buffer: 10});
+
+        labelable.setFieldDefaults(me.fieldDefaults);
+    },
+
+    /**
+     * Called when a {@link Ext.form.field.Field} instance is added to the container's subtree.
+     * @param {Ext.form.field.Field} field The field which was added
+     * @protected
+     */
+    onFieldAdded: function(field) {
+        var me = this;
+        me.mon(field, 'validitychange', me.handleFieldValidityChange, me);
+    },
+
+    /**
+     * Called when a {@link Ext.form.Labelable} instance is removed from the container's subtree.
+     * @param {Ext.form.Labelable} labelable The instance that was removed
+     * @protected
+     */
+    onLabelableRemoved: function(labelable) {
+        var me = this;
+        me.mun(labelable, 'errorchange', me.handleFieldErrorChange, me);
+    },
+
+    /**
+     * Called when a {@link Ext.form.field.Field} instance is removed from the container's subtree.
+     * @param {Ext.form.field.Field} field The field which was removed
+     * @protected
+     */
+    onFieldRemoved: function(field) {
+        var me = this;
+        me.mun(field, 'validitychange', me.handleFieldValidityChange, me);
+    },
+
+    /**
+     * @private Handle validitychange events on sub-fields; invoke the aggregated event and method
+     */
+    handleFieldValidityChange: function(field, isValid) {
+        var me = this;
+        me.fireEvent('fieldvaliditychange', me, field, isValid);
+        me.onFieldValidityChange(field, isValid);
+    },
+
+    /**
+     * @private Handle errorchange events on sub-fields; invoke the aggregated event and method
+     */
+    handleFieldErrorChange: function(labelable, activeError) {
+        var me = this;
+        me.fireEvent('fielderrorchange', me, labelable, activeError);
+        me.onFieldErrorChange(labelable, activeError);
+    },
+
+    /**
+     * Fired when the validity of any field within the container changes.
+     * @param {Ext.form.field.Field} field The sub-field whose validity changed
+     * @param {Boolean} valid The new validity state
+     * @protected
+     */
+    onFieldValidityChange: Ext.emptyFn,
+
+    /**
+     * Fired when the error message of any field within the container changes.
+     * @param {Ext.form.Labelable} field The sub-field whose active error changed
+     * @param {String} error The new active error message
+     * @protected
+     */
+    onFieldErrorChange: Ext.emptyFn
+
+});
+/**
+ * The subclasses of this class provide actions to perform upon {@link Ext.form.Basic Form}s.
+ *
+ * Instances of this class are only created by a {@link Ext.form.Basic Form} when the Form needs to perform an action
+ * such as submit or load. The Configuration options listed for this class are set through the Form's action methods:
+ * {@link Ext.form.Basic#submit submit}, {@link Ext.form.Basic#load load} and {@link Ext.form.Basic#doAction doAction}
+ *
+ * The instance of Action which performed the action is passed to the success and failure callbacks of the Form's action
+ * methods ({@link Ext.form.Basic#submit submit}, {@link Ext.form.Basic#load load} and
+ * {@link Ext.form.Basic#doAction doAction}), and to the {@link Ext.form.Basic#actioncomplete actioncomplete} and
+ * {@link Ext.form.Basic#actionfailed actionfailed} event handlers.
+ */
+Ext.define('Ext.form.action.Action', {
+    alternateClassName: 'Ext.form.Action',
+
+    /**
+     * @cfg {Ext.form.Basic} form
+     * The {@link Ext.form.Basic BasicForm} instance that is invoking this Action. Required.
+     */
+
+    /**
+     * @cfg {String} url
+     * The URL that the Action is to invoke. Will default to the {@link Ext.form.Basic#url url} configured on the
+     * {@link #form}.
+     */
+
+    /**
+     * @cfg {Boolean} reset
+     * When set to **true**, causes the Form to be {@link Ext.form.Basic#reset reset} on Action success. If specified,
+     * this happens before the {@link #success} callback is called and before the Form's
+     * {@link Ext.form.Basic#actioncomplete actioncomplete} event fires.
+     */
+
+    /**
+     * @cfg {String} method
+     * The HTTP method to use to access the requested URL.
+     * Defaults to the {@link Ext.form.Basic#method BasicForm's method}, or 'POST' if not specified.
+     */
+
+    /**
+     * @cfg {Object/String} params
+     * Extra parameter values to pass. These are added to the Form's {@link Ext.form.Basic#baseParams} and passed to the
+     * specified URL along with the Form's input fields.
+     *
+     * Parameters are encoded as standard HTTP parameters using {@link Ext#urlEncode Ext.Object.toQueryString}.
+     */
+
+    /**
+     * @cfg {Object} headers
+     * Extra headers to be sent in the AJAX request for submit and load actions.
+     * See {@link Ext.data.proxy.Ajax#headers}.
+     */
+
+    /**
+     * @cfg {Number} timeout
+     * The number of seconds to wait for a server response before failing with the {@link #failureType} as
+     * {@link Ext.form.action.Action#CONNECT_FAILURE}. If not specified, defaults to the configured
+     * {@link Ext.form.Basic#timeout timeout} of the {@link #form}.
+     */
+
+    /**
+     * @cfg {Function} success
+     * The function to call when a valid success return packet is received.
+     * @cfg {Ext.form.Basic} success.form The form that requested the action
+     * @cfg {Ext.form.action.Action} success.action The Action class. The {@link #result} property of this object may
+     * be examined to perform custom postprocessing.
+     */
+
+    /**
+     * @cfg {Function} failure
+     * The function to call when a failure packet was received, or when an error ocurred in the Ajax communication.
+     * @cfg {Ext.form.Basic} failure.form The form that requested the action
+     * @cfg {Ext.form.action.Action} failure.action The Action class. If an Ajax error ocurred, the failure type will
+     * be in {@link #failureType}. The {@link #result} property of this object may be examined to perform custom
+     * postprocessing.
+     */
+
+    /**
+     * @cfg {Object} scope
+     * The scope in which to call the configured #success and #failure callback functions
+     * (the `this` reference for the callback functions).
+     */
+
+    /**
+     * @cfg {String} waitMsg
+     * The message to be displayed by a call to {@link Ext.window.MessageBox#wait} during the time the action is being
+     * processed.
+     */
+
+    /**
+     * @cfg {String} waitTitle
+     * The title to be displayed by a call to {@link Ext.window.MessageBox#wait} during the time the action is being
+     * processed.
+     */
+
+    /**
+     * @cfg {Boolean} submitEmptyText
+     * If set to true, the emptyText value will be sent with the form when it is submitted.
+     */
+    submitEmptyText : true,
+
+    /**
+     * @property {String} type
+     * The type of action this Action instance performs. Currently only "submit" and "load" are supported.
+     */
+
+    /**
+     * @property {String} failureType
+     * The type of failure detected will be one of these:
+     * {@link #CLIENT_INVALID}, {@link #SERVER_INVALID}, {@link #CONNECT_FAILURE}, or {@link #LOAD_FAILURE}.
+     *
+     * Usage:
+     *
+     *     var fp = new Ext.form.Panel({
+     *     ...
+     *     buttons: [{
+     *         text: 'Save',
+     *         formBind: true,
+     *         handler: function(){
+     *             if(fp.getForm().isValid()){
+     *                 fp.getForm().submit({
+     *                     url: 'form-submit.php',
+     *                     waitMsg: 'Submitting your data...',
+     *                     success: function(form, action){
+     *                         // server responded with success = true
+     *                         var result = action.{@link #result};
+     *                     },
+     *                     failure: function(form, action){
+     *                         if (action.{@link #failureType} === Ext.form.action.Action.CONNECT_FAILURE) {
+     *                             Ext.Msg.alert('Error',
+     *                                 'Status:'+action.{@link #response}.status+': '+
+     *                                 action.{@link #response}.statusText);
+     *                         }
+     *                         if (action.failureType === Ext.form.action.Action.SERVER_INVALID){
+     *                             // server responded with success = false
+     *                             Ext.Msg.alert('Invalid', action.{@link #result}.errormsg);
+     *                         }
+     *                     }
+     *                 });
+     *             }
+     *         }
+     *     },{
+     *         text: 'Reset',
+     *         handler: function(){
+     *             fp.getForm().reset();
+     *         }
+     *     }]
+     */
+
+    /**
+     * @property {Object} response
+     * The raw XMLHttpRequest object used to perform the action.
+     */
+
+    /**
+     * @property {Object} result
+     * The decoded response object containing a boolean `success` property and other, action-specific properties.
+     */
+
+    /**
+     * Creates new Action.
+     * @param {Object} [config] Config object.
+     */
+    constructor: function(config) {
+        if (config) {
+            Ext.apply(this, config);
+        }
+
+        // Normalize the params option to an Object
+        var params = config.params;
+        if (Ext.isString(params)) {
+            this.params = Ext.Object.fromQueryString(params);
+        }
+    },
+
+    /**
+     * @method
+     * Invokes this action using the current configuration.
+     */
+    run: Ext.emptyFn,
+
+    /**
+     * @private
+     * @method onSuccess
+     * Callback method that gets invoked when the action completes successfully. Must be implemented by subclasses.
+     * @param {Object} response
+     */
+
+    /**
+     * @private
+     * @method handleResponse
+     * Handles the raw response and builds a result object from it. Must be implemented by subclasses.
+     * @param {Object} response
+     */
+
+    /**
+     * @private
+     * Handles a failure response.
+     * @param {Object} response
+     */
+    onFailure : function(response){
+        this.response = response;
+        this.failureType = Ext.form.action.Action.CONNECT_FAILURE;
+        this.form.afterAction(this, false);
+    },
+
+    /**
+     * @private
+     * Validates that a response contains either responseText or responseXML and invokes
+     * {@link #handleResponse} to build the result object.
+     * @param {Object} response The raw response object.
+     * @return {Object/Boolean} The result object as built by handleResponse, or `true` if
+     * the response had empty responseText and responseXML.
+     */
+    processResponse : function(response){
+        this.response = response;
+        if (!response.responseText && !response.responseXML) {
+            return true;
+        }
+        return (this.result = this.handleResponse(response));
+    },
+
+    /**
+     * @private
+     * Build the URL for the AJAX request. Used by the standard AJAX submit and load actions.
+     * @return {String} The URL.
+     */
+    getUrl: function() {
+        return this.url || this.form.url;
+    },
+
+    /**
+     * @private
+     * Determine the HTTP method to be used for the request.
+     * @return {String} The HTTP method
+     */
+    getMethod: function() {
+        return (this.method || this.form.method || 'POST').toUpperCase();
+    },
+
+    /**
+     * @private
+     * Get the set of parameters specified in the BasicForm's baseParams and/or the params option.
+     * Items in params override items of the same name in baseParams.
+     * @return {Object} the full set of parameters
+     */
+    getParams: function() {
+        return Ext.apply({}, this.params, this.form.baseParams);
+    },
+
+    /**
+     * @private
+     * Creates a callback object.
+     */
+    createCallback: function() {
+        var me = this,
+            undef,
+            form = me.form;
+        return {
+            success: me.onSuccess,
+            failure: me.onFailure,
+            scope: me,
+            timeout: (this.timeout * 1000) || (form.timeout * 1000),
+            upload: form.fileUpload ? me.onSuccess : undef
+        };
+    },
+
+    statics: {
+        /**
+         * @property
+         * Failure type returned when client side validation of the Form fails thus aborting a submit action. Client
+         * side validation is performed unless {@link Ext.form.action.Submit#clientValidation} is explicitly set to
+         * false.
+         * @static
+         */
+        CLIENT_INVALID: 'client',
+
+        /**
+         * @property
+         * Failure type returned when server side processing fails and the {@link #result}'s `success` property is set to
+         * false.
+         *
+         * In the case of a form submission, field-specific error messages may be returned in the {@link #result}'s
+         * errors property.
+         * @static
+         */
+        SERVER_INVALID: 'server',
+
+        /**
+         * @property
+         * Failure type returned when a communication error happens when attempting to send a request to the remote
+         * server. The {@link #response} may be examined to provide further information.
+         * @static
+         */
+        CONNECT_FAILURE: 'connect',
+
+        /**
+         * @property
+         * Failure type returned when the response's `success` property is set to false, or no field values are returned
+         * in the response's data property.
+         * @static
+         */
+        LOAD_FAILURE: 'load'
+
+
+    }
+});
+
+/**
+ * A class which handles loading of data from a server into the Fields of an {@link Ext.form.Basic}.
+ *
+ * Instances of this class are only created by a {@link Ext.form.Basic Form} when {@link Ext.form.Basic#load load}ing.
+ *
+ * ## Response Packet Criteria
+ *
+ * A response packet **must** contain:
+ *
+ *   - **`success`** property : Boolean
+ *   - **`data`** property : Object
+ *
+ * The `data` property contains the values of Fields to load. The individual value object for each Field is passed to
+ * the Field's {@link Ext.form.field.Field#setValue setValue} method.
+ *
+ * ## JSON Packets
+ *
+ * By default, response packets are assumed to be JSON, so for the following form load call:
+ *
+ *     var myFormPanel = new Ext.form.Panel({
+ *         title: 'Client and routing info',
+ *         renderTo: Ext.getBody(),
+ *         defaults: {
+ *             xtype: 'textfield'
+ *         },
+ *         items: [{
+ *             fieldLabel: 'Client',
+ *             name: 'clientName'
+ *         }, {
+ *             fieldLabel: 'Port of loading',
+ *             name: 'portOfLoading'
+ *         }, {
+ *             fieldLabel: 'Port of discharge',
+ *             name: 'portOfDischarge'
+ *         }]
+ *     });
+ *     myFormPanel.{@link Ext.form.Panel#getForm getForm}().{@link Ext.form.Basic#load load}({
+ *         url: '/getRoutingInfo.php',
+ *         params: {
+ *             consignmentRef: myConsignmentRef
+ *         },
+ *         failure: function(form, action) {
+ *             Ext.Msg.alert("Load failed", action.result.errorMessage);
+ *         }
+ *     });
+ *
+ * a **success response** packet may look like this:
+ *
+ *     {
+ *         success: true,
+ *         data: {
+ *             clientName: "Fred. Olsen Lines",
+ *             portOfLoading: "FXT",
+ *             portOfDischarge: "OSL"
+ *         }
+ *     }
+ *
+ * while a **failure response** packet may look like this:
+ *
+ *     {
+ *         success: false,
+ *         errorMessage: "Consignment reference not found"
+ *     }
+ *
+ * Other data may be placed into the response for processing the {@link Ext.form.Basic Form}'s callback or event handler
+ * methods. The object decoded from this JSON is available in the {@link Ext.form.action.Action#result result} property.
+ */
+Ext.define('Ext.form.action.Load', {
+    extend:'Ext.form.action.Action',
+    requires: ['Ext.data.Connection'],
+    alternateClassName: 'Ext.form.Action.Load',
+    alias: 'formaction.load',
+
+    type: 'load',
+
+    /**
+     * @private
+     */
+    run: function() {
+        Ext.Ajax.request(Ext.apply(
+            this.createCallback(),
+            {
+                method: this.getMethod(),
+                url: this.getUrl(),
+                headers: this.headers,
+                params: this.getParams()
+            }
+        ));
+    },
+
+    /**
+     * @private
+     */
+    onSuccess: function(response){
+        var result = this.processResponse(response),
+            form = this.form;
+        if (result === true || !result.success || !result.data) {
+            this.failureType = Ext.form.action.Action.LOAD_FAILURE;
+            form.afterAction(this, false);
+            return;
+        }
+        form.clearInvalid();
+        form.setValues(result.data);
+        form.afterAction(this, true);
+    },
+
+    /**
+     * @private
+     */
+    handleResponse: function(response) {
+        var reader = this.form.reader,
+            rs, data;
+        if (reader) {
+            rs = reader.read(response);
+            data = rs.records && rs.records[0] ? rs.records[0].data : null;
+            return {
+                success : rs.success,
+                data : data
+            };
+        }
+        return Ext.decode(response.responseText);
+    }
+});
+
+
+/**
+ * A class which handles submission of data from {@link Ext.form.Basic Form}s and processes the returned response.
+ *
+ * Instances of this class are only created by a {@link Ext.form.Basic Form} when
+ * {@link Ext.form.Basic#submit submit}ting.
+ *
+ * # Response Packet Criteria
+ *
+ * A response packet may contain:
+ *
+ *   - **`success`** property : Boolean - required.
+ *
+ *   - **`errors`** property : Object - optional, contains error messages for invalid fields.
+ *
+ * # JSON Packets
+ *
+ * By default, response packets are assumed to be JSON, so a typical response packet may look like this:
+ *
+ *     {
+ *         success: false,
+ *         errors: {
+ *             clientCode: "Client not found",
+ *             portOfLoading: "This field must not be null"
+ *         }
+ *     }
+ *
+ * Other data may be placed into the response for processing by the {@link Ext.form.Basic}'s callback or event handler
+ * methods. The object decoded from this JSON is available in the {@link Ext.form.action.Action#result result} property.
+ *
+ * Alternatively, if an {@link Ext.form.Basic#errorReader errorReader} is specified as an
+ * {@link Ext.data.reader.Xml XmlReader}:
+ *
+ *     errorReader: new Ext.data.reader.Xml({
+ *             record : 'field',
+ *             success: '@success'
+ *         }, [
+ *             'id', 'msg'
+ *         ]
+ *     )
+ *
+ * then the results may be sent back in XML format:
+ *
+ *     <?xml version="1.0" encoding="UTF-8"?>
+ *     <message success="false">
+ *     <errors>
+ *         <field>
+ *             <id>clientCode</id>
+ *             <msg><![CDATA[Code not found. <br /><i>This is a test validation message from the server </i>]]></msg>
+ *         </field>
+ *         <field>
+ *             <id>portOfLoading</id>
+ *             <msg><![CDATA[Port not found. <br /><i>This is a test validation message from the server </i>]]></msg>
+ *         </field>
+ *     </errors>
+ *     </message>
+ *
+ * Other elements may be placed into the response XML for processing by the {@link Ext.form.Basic}'s callback or event
+ * handler methods. The XML document is available in the {@link Ext.form.Basic#errorReader errorReader}'s
+ * {@link Ext.data.reader.Xml#xmlData xmlData} property.
+ */
+Ext.define('Ext.form.action.Submit', {
+    extend:'Ext.form.action.Action',
+    alternateClassName: 'Ext.form.Action.Submit',
+    alias: 'formaction.submit',
+
+    type: 'submit',
+
+    /**
+     * @cfg {Boolean} [clientValidation=true]
+     * Determines whether a Form's fields are validated in a final call to {@link Ext.form.Basic#isValid isValid} prior
+     * to submission. Pass false in the Form's submit options to prevent this.
+     */
+
+    // inherit docs
+    run : function(){
+        var form = this.form;
+        if (this.clientValidation === false || form.isValid()) {
+            this.doSubmit();
+        } else {
+            // client validation failed
+            this.failureType = Ext.form.action.Action.CLIENT_INVALID;
+            form.afterAction(this, false);
+        }
+    },
+
+    /**
+     * @private
+     * Performs the submit of the form data.
+     */
+    doSubmit: function() {
+        var formEl,
+            ajaxOptions = Ext.apply(this.createCallback(), {
+                url: this.getUrl(),
+                method: this.getMethod(),
+                headers: this.headers
+            });
+
+        // For uploads we need to create an actual form that contains the file upload fields,
+        // and pass that to the ajax call so it can do its iframe-based submit method.
+        if (this.form.hasUpload()) {
+            formEl = ajaxOptions.form = this.buildForm();
+            ajaxOptions.isUpload = true;
+        } else {
+            ajaxOptions.params = this.getParams();
+        }
+
+        Ext.Ajax.request(ajaxOptions);
+
+        if (formEl) {
+            Ext.removeNode(formEl);
+        }
+    },
+
+    /**
+     * @private
+     * Builds the full set of parameters from the field values plus any additional configured params.
+     */
+    getParams: function() {
+        var nope = false,
+            configParams = this.callParent(),
+            fieldParams = this.form.getValues(nope, nope, this.submitEmptyText !== nope);
+        return Ext.apply({}, fieldParams, configParams);
+    },
+
+    /**
+     * @private
+     * Builds a form element containing fields corresponding to all the parameters to be
+     * submitted (everything returned by {@link #getParams}.
+     *
+     * NOTE: the form element is automatically added to the DOM, so any code that uses
+     * it must remove it from the DOM after finishing with it.
+     *
+     * @return {HTMLElement}
+     */
+    buildForm: function() {
+        var fieldsSpec = [],
+            formSpec,
+            formEl,
+            basicForm = this.form,
+            params = this.getParams(),
+            uploadFields = [],
+            fields = basicForm.getFields().items,
+            f,
+            fLen   = fields.length,
+            field, key, value, v, vLen,
+            u, uLen;
+
+        for (f = 0; f < fLen; f++) {
+            field = fields[f];
+
+            if (field.isFileUpload()) {
+                uploadFields.push(field);
+            }
+        }
+
+        function addField(name, val) {
+            fieldsSpec.push({
+                tag: 'input',
+                type: 'hidden',
+                name: name,
+                value: Ext.String.htmlEncode(val)
+            });
+        }
+
+        for (key in params) {
+            if (params.hasOwnProperty(key)) {
+                value = params[key];
+
+                if (Ext.isArray(value)) {
+                    vLen = value.length;
+                    for (v = 0; v < vLen; v++) {
+                        addField(key, value[v]);
+                    }
+                } else {
+                    addField(key, value);
+                }
+            }
+        }
+
+        formSpec = {
+            tag: 'form',
+            action: this.getUrl(),
+            method: this.getMethod(),
+            target: this.target || '_self',
+            style: 'display:none',
+            cn: fieldsSpec
+        };
+
+        // Set the proper encoding for file uploads
+        if (uploadFields.length) {
+            formSpec.encoding = formSpec.enctype = 'multipart/form-data';
+        }
+
+        // Create the form
+        formEl = Ext.DomHelper.append(Ext.getBody(), formSpec);
+
+        // Special handling for file upload fields: since browser security measures prevent setting
+        // their values programatically, and prevent carrying their selected values over when cloning,
+        // we have to move the actual field instances out of their components and into the form.
+        uLen = uploadFields.length;
+
+        for (u = 0; u < uLen; u++) {
+            field = uploadFields[u];
+            if (field.rendered) { // can only have a selected file value after being rendered
+                formEl.appendChild(field.extractFileInput());
+            }
+        }
+
+        return formEl;
+    },
+
+
+
+    /**
+     * @private
+     */
+    onSuccess: function(response) {
+        var form = this.form,
+            success = true,
+            result = this.processResponse(response);
+        if (result !== true && !result.success) {
+            if (result.errors) {
+                form.markInvalid(result.errors);
+            }
+            this.failureType = Ext.form.action.Action.SERVER_INVALID;
+            success = false;
+        }
+        form.afterAction(this, success);
+    },
+
+    /**
+     * @private
+     */
+    handleResponse: function(response) {
+        var form = this.form,
+            errorReader = form.errorReader,
+            rs, errors, i, len, records;
+        if (errorReader) {
+            rs = errorReader.read(response);
+            records = rs.records;
+            errors = [];
+            if (records) {
+                for(i = 0, len = records.length; i < len; i++) {
+                    errors[i] = records[i].data;
+                }
+            }
+            if (errors.length < 1) {
+                errors = null;
+            }
+            return {
+                success : rs.success,
+                errors : errors
+            };
+        }
+        return Ext.decode(response.responseText);
+    }
+});
+
+/**
+ * Provides input field management, validation, submission, and form loading services for the collection
+ * of {@link Ext.form.field.Field Field} instances within a {@link Ext.container.Container}. It is recommended
+ * that you use a {@link Ext.form.Panel} as the form container, as that has logic to automatically
+ * hook up an instance of {@link Ext.form.Basic} (plus other conveniences related to field configuration.)
+ *
+ * ## Form Actions
+ *
+ * The Basic class delegates the handling of form loads and submits to instances of {@link Ext.form.action.Action}.
+ * See the various Action implementations for specific details of each one's functionality, as well as the
+ * documentation for {@link #doAction} which details the configuration options that can be specified in
+ * each action call.
+ *
+ * The default submit Action is {@link Ext.form.action.Submit}, which uses an Ajax request to submit the
+ * form's values to a configured URL. To enable normal browser submission of an Ext form, use the
+ * {@link #standardSubmit} config option.
+ *
+ * ## File uploads
+ *
+ * File uploads are not performed using normal 'Ajax' techniques; see the description for
+ * {@link #hasUpload} for details. If you're using file uploads you should read the method description.
+ *
+ * ## Example usage:
+ *
+ *     @example
+ *     Ext.create('Ext.form.Panel', {
+ *         title: 'Basic Form',
+ *         renderTo: Ext.getBody(),
+ *         bodyPadding: 5,
+ *         width: 350,
+ *
+ *         // Any configuration items here will be automatically passed along to
+ *         // the Ext.form.Basic instance when it gets created.
+ *
+ *         // The form will submit an AJAX request to this URL when submitted
+ *         url: 'save-form.php',
+ *
+ *         items: [{
+ *             xtype: 'textfield',
+ *             fieldLabel: 'Field',
+ *             name: 'theField'
+ *         }],
+ *
+ *         buttons: [{
+ *             text: 'Submit',
+ *             handler: function() {
+ *                 // The getForm() method returns the Ext.form.Basic instance:
+ *                 var form = this.up('form').getForm();
+ *                 if (form.isValid()) {
+ *                     // Submit the Ajax request and handle the response
+ *                     form.submit({
+ *                         success: function(form, action) {
+ *                            Ext.Msg.alert('Success', action.result.message);
+ *                         },
+ *                         failure: function(form, action) {
+ *                             Ext.Msg.alert('Failed', action.result ? action.result.message : 'No response');
+ *                         }
+ *                     });
+ *                 }
+ *             }
+ *         }]
+ *     });
+ *
+ * @docauthor Jason Johnston <jason@sencha.com>
+ */
+Ext.define('Ext.form.Basic', {
+    extend: 'Ext.util.Observable',
+    alternateClassName: 'Ext.form.BasicForm',
+    requires: ['Ext.util.MixedCollection', 'Ext.form.action.Load', 'Ext.form.action.Submit',
+               'Ext.window.MessageBox', 'Ext.data.Errors', 'Ext.util.DelayedTask'],
+
+    /**
+     * Creates new form.
+     * @param {Ext.container.Container} owner The component that is the container for the form, usually a {@link Ext.form.Panel}
+     * @param {Object} config Configuration options. These are normally specified in the config to the
+     * {@link Ext.form.Panel} constructor, which passes them along to the BasicForm automatically.
+     */
+    constructor: function(owner, config) {
+        var me = this,
+            onItemAddOrRemove = me.onItemAddOrRemove,
+            api,
+            fn;
+
+        /**
+         * @property {Ext.container.Container} owner
+         * The container component to which this BasicForm is attached.
+         */
+        me.owner = owner;
+
+        // Listen for addition/removal of fields in the owner container
+        me.mon(owner, {
+            add: onItemAddOrRemove,
+            remove: onItemAddOrRemove,
+            scope: me
+        });
+
+        Ext.apply(me, config);
+
+        // Normalize the paramOrder to an Array
+        if (Ext.isString(me.paramOrder)) {
+            me.paramOrder = me.paramOrder.split(/[\s,|]/);
+        }
+        
+        if (me.api) {
+            api = me.api = Ext.apply({}, me.api);
+            for (fn in api) {
+                if (api.hasOwnProperty(fn)) {
+                    api[fn] = Ext.direct.Manager.parseMethod(api[fn]);
+                }
+            }
+        }
+
+        me.checkValidityTask = new Ext.util.DelayedTask(me.checkValidity, me);
+
+        me.addEvents(
+            /**
+             * @event beforeaction
+             * Fires before any action is performed. Return false to cancel the action.
+             * @param {Ext.form.Basic} this
+             * @param {Ext.form.action.Action} action The {@link Ext.form.action.Action} to be performed
+             */
+            'beforeaction',
+            /**
+             * @event actionfailed
+             * Fires when an action fails.
+             * @param {Ext.form.Basic} this
+             * @param {Ext.form.action.Action} action The {@link Ext.form.action.Action} that failed
+             */
+            'actionfailed',
+            /**
+             * @event actioncomplete
+             * Fires when an action is completed.
+             * @param {Ext.form.Basic} this
+             * @param {Ext.form.action.Action} action The {@link Ext.form.action.Action} that completed
+             */
+            'actioncomplete',
+            /**
+             * @event validitychange
+             * Fires when the validity of the entire form changes.
+             * @param {Ext.form.Basic} this
+             * @param {Boolean} valid `true` if the form is now valid, `false` if it is now invalid.
+             */
+            'validitychange',
+            /**
+             * @event dirtychange
+             * Fires when the dirty state of the entire form changes.
+             * @param {Ext.form.Basic} this
+             * @param {Boolean} dirty `true` if the form is now dirty, `false` if it is no longer dirty.
+             */
+            'dirtychange'
+        );
+        me.callParent();
+    },
+
+    /**
+     * Do any post layout initialization
+     * @private
+     */
+    initialize : function() {
+        var me = this;
+        me.initialized = true;
+        me.onValidityChange(!me.hasInvalidField());
+    },
+
+
+    /**
+     * @cfg {String} method
+     * The request method to use (GET or POST) for form actions if one isn't supplied in the action options.
+     */
+
+    /**
+     * @cfg {Ext.data.reader.Reader} reader
+     * An Ext.data.DataReader (e.g. {@link Ext.data.reader.Xml}) to be used to read
+     * data when executing 'load' actions. This is optional as there is built-in
+     * support for processing JSON responses.
+     */
+
+    /**
+     * @cfg {Ext.data.reader.Reader} errorReader
+     * An Ext.data.DataReader (e.g. {@link Ext.data.reader.Xml}) to be used to
+     * read field error messages returned from 'submit' actions. This is optional
+     * as there is built-in support for processing JSON responses.
+     *
+     * The Records which provide messages for the invalid Fields must use the
+     * Field name (or id) as the Record ID, and must contain a field called 'msg'
+     * which contains the error message.
+     *
+     * The errorReader does not have to be a full-blown implementation of a
+     * Reader. It simply needs to implement a `read(xhr)` function
+     * which returns an Array of Records in an object with the following
+     * structure:
+     *
+     *     {
+     *         records: recordArray
+     *     }
+     */
+
+    /**
+     * @cfg {String} url
+     * The URL to use for form actions if one isn't supplied in the
+     * {@link #doAction doAction} options.
+     */
+
+    /**
+     * @cfg {Object} baseParams
+     * Parameters to pass with all requests. e.g. baseParams: `{id: '123', foo: 'bar'}`.
+     *
+     * Parameters are encoded as standard HTTP parameters using {@link Ext.Object#toQueryString}.
+     */
+
+    /**
+     * @cfg {Number} timeout
+     * Timeout for form actions in seconds.
+     */
+    timeout: 30,
+
+    /**
+     * @cfg {Object} api
+     * If specified, load and submit actions will be handled with {@link Ext.form.action.DirectLoad DirectLoad}
+     * and {@link Ext.form.action.DirectSubmit DirectSubmit}.  Methods which have been imported by
+     * {@link Ext.direct.Manager} can be specified here to load and submit forms. API methods may also be
+     * specified as strings. See {@link Ext.data.proxy.Direct#directFn}.  Such as the following:
+     *
+     *     api: {
+     *         load: App.ss.MyProfile.load,
+     *         submit: App.ss.MyProfile.submit
+     *     }
+     *
+     * Load actions can use {@link #paramOrder} or {@link #paramsAsHash} to customize how the load method
+     * is invoked.  Submit actions will always use a standard form submit. The `formHandler` configuration
+     * (see Ext.direct.RemotingProvider#action) must be set on the associated server-side method which has
+     * been imported by {@link Ext.direct.Manager}.
+     */
+
+    /**
+     * @cfg {String/String[]} paramOrder
+     * A list of params to be executed server side. Only used for the {@link #api} `load`
+     * configuration.
+     *
+     * Specify the params in the order in which they must be executed on the
+     * server-side as either (1) an Array of String values, or (2) a String of params
+     * delimited by either whitespace, comma, or pipe. For example,
+     * any of the following would be acceptable:
+     *
+     *     paramOrder: ['param1','param2','param3']
+     *     paramOrder: 'param1 param2 param3'
+     *     paramOrder: 'param1,param2,param3'
+     *     paramOrder: 'param1|param2|param'
+     */
+
+    /**
+     * @cfg {Boolean} paramsAsHash
+     * Only used for the {@link #api} `load` configuration. If true, parameters will be sent as a
+     * single hash collection of named arguments. Providing a {@link #paramOrder} nullifies this
+     * configuration.
+     */
+    paramsAsHash: false,
+
+    //<locale>
+    /**
+     * @cfg {String} waitTitle
+     * The default title to show for the waiting message box
+     */
+    waitTitle: 'Please Wait...',
+    //</locale>
+
+    /**
+     * @cfg {Boolean} trackResetOnLoad
+     * If set to true, {@link #reset}() resets to the last loaded or {@link #setValues}() data instead of
+     * when the form was first created.
+     */
+    trackResetOnLoad: false,
+
+    /**
+     * @cfg {Boolean} standardSubmit
+     * If set to true, a standard HTML form submit is used instead of a XHR (Ajax) style form submission.
+     * All of the field values, plus any additional params configured via {@link #baseParams}
+     * and/or the `options` to {@link #submit}, will be included in the values submitted in the form.
+     */
+
+    /**
+     * @cfg {String/HTMLElement/Ext.Element} waitMsgTarget
+     * By default wait messages are displayed with Ext.MessageBox.wait. You can target a specific
+     * element by passing it or its id or mask the form itself by passing in true.
+     */
+
+
+    // Private
+    wasDirty: false,
+
+
+    /**
+     * Destroys this object.
+     */
+    destroy: function() {
+        this.clearListeners();
+        this.checkValidityTask.cancel();
+    },
+
+    /**
+     * @private
+     * Handle addition or removal of descendant items. Invalidates the cached list of fields
+     * so that {@link #getFields} will do a fresh query next time it is called. Also adds listeners
+     * for state change events on added fields, and tracks components with formBind=true.
+     */
+    onItemAddOrRemove: function(parent, child) {
+        var me = this,
+            isAdding = !!child.ownerCt,
+            isContainer = child.isContainer;
+
+        function handleField(field) {
+            // Listen for state change events on fields
+            me[isAdding ? 'mon' : 'mun'](field, {
+                validitychange: me.checkValidity,
+                dirtychange: me.checkDirty,
+                scope: me,
+                buffer: 100 //batch up sequential calls to avoid excessive full-form validation
+            });
+            // Flush the cached list of fields
+            delete me._fields;
+        }
+
+        if (child.isFormField) {
+            handleField(child);
+        } else if (isContainer) {
+            // Walk down
+            if (child.isDestroyed || child.destroying) {
+                // the container is destroyed, this means we may have child fields, so here
+                // we just invalidate all the fields to be sure.
+                delete me._fields;
+            } else {
+                Ext.Array.forEach(child.query('[isFormField]'), handleField);
+            }
+        }
+
+        // Flush the cached list of formBind components
+        delete this._boundItems;
+
+        // Check form bind, but only after initial add. Batch it to prevent excessive validation
+        // calls when many fields are being added at once.
+        if (me.initialized) {
+            me.checkValidityTask.delay(10);
+        }
+    },
+
+    /**
+     * Return all the {@link Ext.form.field.Field} components in the owner container.
+     * @return {Ext.util.MixedCollection} Collection of the Field objects
+     */
+    getFields: function() {
+        var fields = this._fields;
+        if (!fields) {
+            fields = this._fields = new Ext.util.MixedCollection();
+            fields.addAll(this.owner.query('[isFormField]'));
+        }
+        return fields;
+    },
+
+    /**
+     * @private
+     * Finds and returns the set of all items bound to fields inside this form
+     * @return {Ext.util.MixedCollection} The set of all bound form field items
+     */
+    getBoundItems: function() {
+        var boundItems = this._boundItems;
+        
+        if (!boundItems || boundItems.getCount() === 0) {
+            boundItems = this._boundItems = new Ext.util.MixedCollection();
+            boundItems.addAll(this.owner.query('[formBind]'));
+        }
+        
+        return boundItems;
+    },
+
+    /**
+     * Returns true if the form contains any invalid fields. No fields will be marked as invalid
+     * as a result of calling this; to trigger marking of fields use {@link #isValid} instead.
+     */
+    hasInvalidField: function() {
+        return !!this.getFields().findBy(function(field) {
+            var preventMark = field.preventMark,
+                isValid;
+            field.preventMark = true;
+            isValid = field.isValid();
+            field.preventMark = preventMark;
+            return !isValid;
+        });
+    },
+
+    /**
+     * Returns true if client-side validation on the form is successful. Any invalid fields will be
+     * marked as invalid. If you only want to determine overall form validity without marking anything,
+     * use {@link #hasInvalidField} instead.
+     * @return Boolean
+     */
+    isValid: function() {
+        var me = this,
+            invalid;
+        Ext.suspendLayouts();
+        invalid = me.getFields().filterBy(function(field) {
+            return !field.validate();
+        });
+        Ext.resumeLayouts(true);
+        return invalid.length < 1;
+    },
+
+    /**
+     * Check whether the validity of the entire form has changed since it was last checked, and
+     * if so fire the {@link #validitychange validitychange} event. This is automatically invoked
+     * when an individual field's validity changes.
+     */
+    checkValidity: function() {
+        var me = this,
+            valid = !me.hasInvalidField();
+        if (valid !== me.wasValid) {
+            me.onValidityChange(valid);
+            me.fireEvent('validitychange', me, valid);
+            me.wasValid = valid;
+        }
+    },
+
+    /**
+     * @private
+     * Handle changes in the form's validity. If there are any sub components with
+     * formBind=true then they are enabled/disabled based on the new validity.
+     * @param {Boolean} valid
+     */
+    onValidityChange: function(valid) {
+        var boundItems = this.getBoundItems(),
+            items, i, iLen, cmp;
+
+        if (boundItems) {
+            items = boundItems.items;
+            iLen  = items.length;
+
+            for (i = 0; i < iLen; i++) {
+                cmp = items[i];
+
+                if (cmp.disabled === valid) {
+                    cmp.setDisabled(!valid);
+                }
+            }
+        }
+    },
+
+    /**
+     * Returns true if any fields in this form have changed from their original values.
+     *
+     * Note that if this BasicForm was configured with {@link #trackResetOnLoad} then the
+     * Fields' *original values* are updated when the values are loaded by {@link #setValues}
+     * or {@link #loadRecord}.
+     *
+     * @return Boolean
+     */
+    isDirty: function() {
+        return !!this.getFields().findBy(function(f) {
+            return f.isDirty();
+        });
+    },
+
+    /**
+     * Check whether the dirty state of the entire form has changed since it was last checked, and
+     * if so fire the {@link #dirtychange dirtychange} event. This is automatically invoked
+     * when an individual field's dirty state changes.
+     */
+    checkDirty: function() {
+        var dirty = this.isDirty();
+        if (dirty !== this.wasDirty) {
+            this.fireEvent('dirtychange', this, dirty);
+            this.wasDirty = dirty;
+        }
+    },
+
+    /**
+     * Returns true if the form contains a file upload field. This is used to determine the method for submitting the
+     * form: File uploads are not performed using normal 'Ajax' techniques, that is they are **not** performed using
+     * XMLHttpRequests. Instead a hidden `<form>` element containing all the fields is created temporarily and submitted
+     * with its [target][1] set to refer to a dynamically generated, hidden `<iframe>` which is inserted into the document
+     * but removed after the return data has been gathered.
+     *
+     * The server response is parsed by the browser to create the document for the IFRAME. If the server is using JSON
+     * to send the return object, then the [Content-Type][2] header must be set to "text/html" in order to tell the
+     * browser to insert the text unchanged into the document body.
+     *
+     * Characters which are significant to an HTML parser must be sent as HTML entities, so encode `"<"` as `"&lt;"`,
+     * `"&"` as `"&amp;"` etc.
+     *
+     * The response text is retrieved from the document, and a fake XMLHttpRequest object is created containing a
+     * responseText property in order to conform to the requirements of event handlers and callbacks.
+     *
+     * Be aware that file upload packets are sent with the content type [multipart/form][3] and some server technologies
+     * (notably JEE) may require some custom processing in order to retrieve parameter names and parameter values from
+     * the packet content.
+     *
+     * [1]: http://www.w3.org/TR/REC-html40/present/frames.html#adef-target
+     * [2]: http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.17
+     * [3]: http://www.faqs.org/rfcs/rfc2388.html
+     *
+     * @return Boolean
+     */
+    hasUpload: function() {
+        return !!this.getFields().findBy(function(f) {
+            return f.isFileUpload();
+        });
+    },
+
+    /**
+     * Performs a predefined action (an implementation of {@link Ext.form.action.Action}) to perform application-
+     * specific processing.
+     *
+     * @param {String/Ext.form.action.Action} action The name of the predefined action type, or instance of {@link
+     * Ext.form.action.Action} to perform.
+     *
+     * @param {Object} [options] The options to pass to the {@link Ext.form.action.Action} that will get created,
+     * if the action argument is a String.
+     *
+     * All of the config options listed below are supported by both the {@link Ext.form.action.Submit submit} and
+     * {@link Ext.form.action.Load load} actions unless otherwise noted (custom actions could also accept other
+     * config options):
+     *
+     * @param {String} options.url
+     * The url for the action (defaults to the form's {@link #url}.)
+     *
+     * @param {String} options.method
+     * The form method to use (defaults to the form's method, or POST if not defined)
+     *
+     * @param {String/Object} options.params
+     * The params to pass (defaults to the form's baseParams, or none if not defined)
+     *
+     * Parameters are encoded as standard HTTP parameters using {@link Ext#urlEncode Ext.Object.toQueryString}.
+     *
+     * @param {Object} options.headers
+     * Request headers to set for the action.
+     *
+     * @param {Function} options.success
+     * The callback that will be invoked after a successful response (see top of {@link Ext.form.action.Submit submit}
+     * and {@link Ext.form.action.Load load} for a description of what constitutes a successful response).
+     * @param {Ext.form.Basic} options.success.form The form that requested the action.
+     * @param {Ext.form.action.Action} options.success.action The Action object which performed the operation.
+     * The action object contains these properties of interest:
+     *
+     *  - {@link Ext.form.action.Action#response response}
+     *  - {@link Ext.form.action.Action#result result} - interrogate for custom postprocessing
+     *  - {@link Ext.form.action.Action#type type}
+     *
+     * @param {Function} options.failure
+     * The callback that will be invoked after a failed transaction attempt.
+     * @param {Ext.form.Basic} options.failure.form The form that requested the action.
+     * @param {Ext.form.action.Action} options.failure.action The Action object which performed the operation.
+     * The action object contains these properties of interest:
+     *
+     * - {@link Ext.form.action.Action#failureType failureType}
+     * - {@link Ext.form.action.Action#response response}
+     * - {@link Ext.form.action.Action#result result} - interrogate for custom postprocessing
+     * - {@link Ext.form.action.Action#type type}
+     *
+     * @param {Object} options.scope
+     * The scope in which to call the callback functions (The this reference for the callback functions).
+     *
+     * @param {Boolean} options.clientValidation
+     * Submit Action only. Determines whether a Form's fields are validated in a final call to {@link
+     * Ext.form.Basic#isValid isValid} prior to submission. Set to false to prevent this. If undefined, pre-submission
+     * field validation is performed.
+     *
+     * @return {Ext.form.Basic} this
+     */
+    doAction: function(action, options) {
+        if (Ext.isString(action)) {
+            action = Ext.ClassManager.instantiateByAlias('formaction.' + action, Ext.apply({}, options, {form: this}));
+        }
+        if (this.fireEvent('beforeaction', this, action) !== false) {
+            this.beforeAction(action);
+            Ext.defer(action.run, 100, action);
+        }
+        return this;
+    },
+
+    /**
+     * Shortcut to {@link #doAction do} a {@link Ext.form.action.Submit submit action}. This will use the
+     * {@link Ext.form.action.Submit AJAX submit action} by default. If the {@link #standardSubmit} config
+     * is enabled it will use a standard form element to submit, or if the {@link #api} config is present
+     * it will use the {@link Ext.form.action.DirectLoad Ext.direct.Direct submit action}.
+     *
+     * The following code:
+     *
+     *     myFormPanel.getForm().submit({
+     *         clientValidation: true,
+     *         url: 'updateConsignment.php',
+     *         params: {
+     *             newStatus: 'delivered'
+     *         },
+     *         success: function(form, action) {
+     *            Ext.Msg.alert('Success', action.result.msg);
+     *         },
+     *         failure: function(form, action) {
+     *             switch (action.failureType) {
+     *                 case Ext.form.action.Action.CLIENT_INVALID:
+     *                     Ext.Msg.alert('Failure', 'Form fields may not be submitted with invalid values');
+     *                     break;
+     *                 case Ext.form.action.Action.CONNECT_FAILURE:
+     *                     Ext.Msg.alert('Failure', 'Ajax communication failed');
+     *                     break;
+     *                 case Ext.form.action.Action.SERVER_INVALID:
+     *                    Ext.Msg.alert('Failure', action.result.msg);
+     *            }
+     *         }
+     *     });
+     *
+     * would process the following server response for a successful submission:
+     *
+     *     {
+     *         "success":true, // note this is Boolean, not string
+     *         "msg":"Consignment updated"
+     *     }
+     *
+     * and the following server response for a failed submission:
+     *
+     *     {
+     *         "success":false, // note this is Boolean, not string
+     *         "msg":"You do not have permission to perform this operation"
+     *     }
+     *
+     * @param {Object} options The options to pass to the action (see {@link #doAction} for details).
+     * @return {Ext.form.Basic} this
+     */
+    submit: function(options) {
+        options = options || {};
+        var me = this,
+            action;
+            
+        if (options.standardSubmit || me.standardSubmit) {
+            action = 'standardsubmit';
+        } else {
+            action = me.api ? 'directsubmit' : 'submit';
+        }
+            
+        return me.doAction(action, options);
+    },
+
+    /**
+     * Shortcut to {@link #doAction do} a {@link Ext.form.action.Load load action}.
+     * @param {Object} options The options to pass to the action (see {@link #doAction} for details)
+     * @return {Ext.form.Basic} this
+     */
+    load: function(options) {
+        return this.doAction(this.api ? 'directload' : 'load', options);
+    },
+
+    /**
+     * Persists the values in this form into the passed {@link Ext.data.Model} object in a beginEdit/endEdit block.
+     * If the record is not specified, it will attempt to update (if it exists) the record provided to loadRecord.
+     * @param {Ext.data.Model} [record] The record to edit
+     * @return {Ext.form.Basic} this
+     */
+    updateRecord: function(record) {
+        record = record || this._record;
+        if (!record) {
+            Ext.Error.raise("A record is required.");
+        }
+        var fields = record.fields.items,
+            values = this.getFieldValues(),
+            obj = {},
+            i = 0,
+            len = fields.length,
+            name;
+
+        for (; i < len; ++i) {
+            name  = fields[i].name;
+
+            if (values.hasOwnProperty(name)) {
+                obj[name] = values[name];
+            }
+        }
+
+        record.beginEdit();
+        record.set(obj);
+        record.endEdit();
+
+        return this;
+    },
+
+    /**
+     * Loads an {@link Ext.data.Model} into this form by calling {@link #setValues} with the
+     * {@link Ext.data.Model#raw record data}.
+     * See also {@link #trackResetOnLoad}.
+     * @param {Ext.data.Model} record The record to load
+     * @return {Ext.form.Basic} this
+     */
+    loadRecord: function(record) {
+        this._record = record;
+        return this.setValues(record.data);
+    },
+
+    /**
+     * Returns the last Ext.data.Model instance that was loaded via {@link #loadRecord}
+     * @return {Ext.data.Model} The record
+     */
+    getRecord: function() {
+        return this._record;
+    },
+
+    /**
+     * @private
+     * Called before an action is performed via {@link #doAction}.
+     * @param {Ext.form.action.Action} action The Action instance that was invoked
+     */
+    beforeAction: function(action) {
+        var waitMsg = action.waitMsg,
+            maskCls = Ext.baseCSSPrefix + 'mask-loading',
+            fields  = this.getFields().items,
+            f,
+            fLen    = fields.length,
+            field, waitMsgTarget;
+
+        // Call HtmlEditor's syncValue before actions
+        for (f = 0; f < fLen; f++) {
+            field = fields[f];
+
+            if (field.isFormField && field.syncValue) {
+                field.syncValue();
+            }
+        }
+
+        if (waitMsg) {
+            waitMsgTarget = this.waitMsgTarget;
+            if (waitMsgTarget === true) {
+                this.owner.el.mask(waitMsg, maskCls);
+            } else if (waitMsgTarget) {
+                waitMsgTarget = this.waitMsgTarget = Ext.get(waitMsgTarget);
+                waitMsgTarget.mask(waitMsg, maskCls);
+            } else {
+                Ext.MessageBox.wait(waitMsg, action.waitTitle || this.waitTitle);
+            }
+        }
+    },
+
+    /**
+     * @private
+     * Called after an action is performed via {@link #doAction}.
+     * @param {Ext.form.action.Action} action The Action instance that was invoked
+     * @param {Boolean} success True if the action completed successfully, false, otherwise.
+     */
+    afterAction: function(action, success) {
+        if (action.waitMsg) {
+            var messageBox = Ext.MessageBox,
+                waitMsgTarget = this.waitMsgTarget;
+            if (waitMsgTarget === true) {
+                this.owner.el.unmask();
+            } else if (waitMsgTarget) {
+                waitMsgTarget.unmask();
+            } else {
+                // Do not fire the hide event because that triggers complex processing
+                // which is not necessary just for the wait window, and which may interfere with the app.
+                messageBox.suspendEvents();
+                messageBox.hide();
+                messageBox.resumeEvents();
+            }
+        }
+        if (success) {
+            if (action.reset) {
+                this.reset();
+            }
+            Ext.callback(action.success, action.scope || action, [this, action]);
+            this.fireEvent('actioncomplete', this, action);
+        } else {
+            Ext.callback(action.failure, action.scope || action, [this, action]);
+            this.fireEvent('actionfailed', this, action);
+        }
+    },
+
+
+    /**
+     * Find a specific {@link Ext.form.field.Field} in this form by id or name.
+     * @param {String} id The value to search for (specify either a {@link Ext.Component#id id} or
+     * {@link Ext.form.field.Field#getName name or hiddenName}).
+     * @return {Ext.form.field.Field} The first matching field, or `null` if none was found.
+     */
+    findField: function(id) {
+        return this.getFields().findBy(function(f) {
+            return f.id === id || f.getName() === id;
+        });
+    },
+
+
+    /**
+     * Mark fields in this form invalid in bulk.
+     * @param {Object/Object[]/Ext.data.Errors} errors
+     * Either an array in the form `[{id:'fieldId', msg:'The message'}, ...]`,
+     * an object hash of `{id: msg, id2: msg2}`, or a {@link Ext.data.Errors} object.
+     * @return {Ext.form.Basic} this
+     */
+    markInvalid: function(errors) {
+        var me = this,
+            e, eLen, error, value,
+            key;
+
+        function mark(fieldId, msg) {
+            var field = me.findField(fieldId);
+            if (field) {
+                field.markInvalid(msg);
+            }
+        }
+
+        if (Ext.isArray(errors)) {
+            eLen = errors.length;
+
+            for (e = 0; e < eLen; e++) {
+                error = errors[e];
+                mark(error.id, error.msg);
+            }
+        } else if (errors instanceof Ext.data.Errors) {
+            eLen  = errors.items.length;
+            for (e = 0; e < eLen; e++) {
+                error = errors.items[e];
+
+                mark(error.field, error.message);
+            }
+        } else {
+            for (key in errors) {
+                if (errors.hasOwnProperty(key)) {
+                    value = errors[key];
+                    mark(key, value, errors);
+                }
+            }
+        }
+        return this;
+    },
+
+    /**
+     * Set values for fields in this form in bulk.
+     *
+     * @param {Object/Object[]} values Either an array in the form:
+     *
+     *     [{id:'clientName', value:'Fred. Olsen Lines'},
+     *      {id:'portOfLoading', value:'FXT'},
+     *      {id:'portOfDischarge', value:'OSL'} ]
+     *
+     * or an object hash of the form:
+     *
+     *     {
+     *         clientName: 'Fred. Olsen Lines',
+     *         portOfLoading: 'FXT',
+     *         portOfDischarge: 'OSL'
+     *     }
+     *
+     * @return {Ext.form.Basic} this
+     */
+    setValues: function(values) {
+        var me = this,
+            v, vLen, val, field;
+
+        function setVal(fieldId, val) {
+            var field = me.findField(fieldId);
+            if (field) {
+                field.setValue(val);
+                if (me.trackResetOnLoad) {
+                    field.resetOriginalValue();
+                }
+            }
+        }
+
+        if (Ext.isArray(values)) {
+            // array of objects
+            vLen = values.length;
+
+            for (v = 0; v < vLen; v++) {
+                val = values[v];
+
+                setVal(val.id, val.value);
+            }
+        } else {
+            // object hash
+            Ext.iterate(values, setVal);
+        }
+        return this;
+    },
+
+    /**
+     * Retrieves the fields in the form as a set of key/value pairs, using their
+     * {@link Ext.form.field.Field#getSubmitData getSubmitData()} method to collect the values.
+     * If multiple fields return values under the same name those values will be combined into an Array.
+     * This is similar to {@link Ext.form.Basic#getFieldValues getFieldValues} except that this method
+     * collects only String values for submission, while getFieldValues collects type-specific data
+     * values (e.g. Date objects for date fields.)
+     *
+     * @param {Boolean} [asString=false] If true, will return the key/value collection as a single
+     * URL-encoded param string.
+     * @param {Boolean} [dirtyOnly=false] If true, only fields that are dirty will be included in the result.
+     * @param {Boolean} [includeEmptyText=false] If true, the configured emptyText of empty fields will be used.
+     * @param {Boolean} [useDataValues=false] If true, the {@link Ext.form.field.Field#getModelData getModelData}
+     * method is used to retrieve values from fields, otherwise the {@link Ext.form.field.Field#getSubmitData getSubmitData}
+     * method is used.
+     * @return {String/Object}
+     */
+    getValues: function(asString, dirtyOnly, includeEmptyText, useDataValues) {
+        var values  = {},
+            fields  = this.getFields().items,
+            f,
+            fLen    = fields.length,
+            isArray = Ext.isArray,
+            field, data, val, bucket, name;
+
+        for (f = 0; f < fLen; f++) {
+            field = fields[f];
+
+            if (!dirtyOnly || field.isDirty()) {
+                data = field[useDataValues ? 'getModelData' : 'getSubmitData'](includeEmptyText);
+
+                if (Ext.isObject(data)) {
+                    for (name in data) {
+                        if (data.hasOwnProperty(name)) {
+                            val = data[name];
+
+                            if (includeEmptyText && val === '') {
+                                val = field.emptyText || '';
+                            }
+
+                            if (values.hasOwnProperty(name)) {
+                                bucket = values[name];
+
+                                if (!isArray(bucket)) {
+                                    bucket = values[name] = [bucket];
+                                }
+
+                                if (isArray(val)) {
+                                    values[name] = values[name] = bucket.concat(val);
+                                } else {
+                                    bucket.push(val);
+                                }
+                            } else {
+                                values[name] = val;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (asString) {
+            values = Ext.Object.toQueryString(values);
+        }
+        return values;
+    },
+
+    /**
+     * Retrieves the fields in the form as a set of key/value pairs, using their
+     * {@link Ext.form.field.Field#getModelData getModelData()} method to collect the values.
+     * If multiple fields return values under the same name those values will be combined into an Array.
+     * This is similar to {@link #getValues} except that this method collects type-specific data values
+     * (e.g. Date objects for date fields) while getValues returns only String values for submission.
+     *
+     * @param {Boolean} [dirtyOnly=false] If true, only fields that are dirty will be included in the result.
+     * @return {Object}
+     */
+    getFieldValues: function(dirtyOnly) {
+        return this.getValues(false, dirtyOnly, false, true);
+    },
+
+    /**
+     * Clears all invalid field messages in this form.
+     * @return {Ext.form.Basic} this
+     */
+    clearInvalid: function() {
+        Ext.suspendLayouts();
+
+        var me     = this,
+            fields = me.getFields().items,
+            f,
+            fLen   = fields.length;
+
+        for (f = 0; f < fLen; f++) {
+            fields[f].clearInvalid();
+        }
+
+        Ext.resumeLayouts(true);
+        return me;
+    },
+
+    /**
+     * Resets all fields in this form.
+     * @return {Ext.form.Basic} this
+     */
+    reset: function() {
+        Ext.suspendLayouts();
+
+        var me     = this,
+            fields = me.getFields().items,
+            f,
+            fLen   = fields.length;
+
+        for (f = 0; f < fLen; f++) {
+            fields[f].reset();
+        }
+
+        Ext.resumeLayouts(true);
+        return me;
+    },
+
+    /**
+     * Calls {@link Ext#apply Ext.apply} for all fields in this form with the passed object.
+     * @param {Object} obj The object to be applied
+     * @return {Ext.form.Basic} this
+     */
+    applyToFields: function(obj) {
+        var fields = this.getFields().items,
+            f,
+            fLen   = fields.length;
+
+        for (f = 0; f < fLen; f++) {
+            Ext.apply(fields[f], obj);
+        }
+
+        return this;
+    },
+
+    /**
+     * Calls {@link Ext#applyIf Ext.applyIf} for all field in this form with the passed object.
+     * @param {Object} obj The object to be applied
+     * @return {Ext.form.Basic} this
+     */
+    applyIfToFields: function(obj) {
+        var fields = this.getFields().items,
+            f,
+            fLen   = fields.length;
+
+        for (f = 0; f < fLen; f++) {
+            Ext.applyIf(fields[f], obj);
+        }
+
+        return this;
+    }
+});
+
+/**
+ * @docauthor Jason Johnston <jason@sencha.com>
+ * 
+ * FormPanel provides a standard container for forms. It is essentially a standard {@link Ext.panel.Panel} which
+ * automatically creates a {@link Ext.form.Basic BasicForm} for managing any {@link Ext.form.field.Field}
+ * objects that are added as descendants of the panel. It also includes conveniences for configuring and
+ * working with the BasicForm and the collection of Fields.
+ * 
+ * # Layout
+ * 
+ * By default, FormPanel is configured with `{@link Ext.layout.container.Anchor layout:'anchor'}` for
+ * the layout of its immediate child items. This can be changed to any of the supported container layouts.
+ * The layout of sub-containers is configured in {@link Ext.container.Container#layout the standard way}.
+ * 
+ * # BasicForm
+ * 
+ * Although **not listed** as configuration options of FormPanel, the FormPanel class accepts all
+ * of the config options supported by the {@link Ext.form.Basic} class, and will pass them along to
+ * the internal BasicForm when it is created.
+ * 
+ * The following events fired by the BasicForm will be re-fired by the FormPanel and can therefore be
+ * listened for on the FormPanel itself:
+ * 
+ * - {@link Ext.form.Basic#beforeaction beforeaction}
+ * - {@link Ext.form.Basic#actionfailed actionfailed}
+ * - {@link Ext.form.Basic#actioncomplete actioncomplete}
+ * - {@link Ext.form.Basic#validitychange validitychange}
+ * - {@link Ext.form.Basic#dirtychange dirtychange}
+ * 
+ * # Field Defaults
+ * 
+ * The {@link #fieldDefaults} config option conveniently allows centralized configuration of default values
+ * for all fields added as descendants of the FormPanel. Any config option recognized by implementations
+ * of {@link Ext.form.Labelable} may be included in this object. See the {@link #fieldDefaults} documentation
+ * for details of how the defaults are applied.
+ * 
+ * # Form Validation
+ * 
+ * With the default configuration, form fields are validated on-the-fly while the user edits their values.
+ * This can be controlled on a per-field basis (or via the {@link #fieldDefaults} config) with the field
+ * config properties {@link Ext.form.field.Field#validateOnChange} and {@link Ext.form.field.Base#checkChangeEvents},
+ * and the FormPanel's config properties {@link #pollForChanges} and {@link #pollInterval}.
+ * 
+ * Any component within the FormPanel can be configured with `formBind: true`. This will cause that
+ * component to be automatically disabled when the form is invalid, and enabled when it is valid. This is most
+ * commonly used for Button components to prevent submitting the form in an invalid state, but can be used on
+ * any component type.
+ * 
+ * For more information on form validation see the following:
+ * 
+ * - {@link Ext.form.field.Field#validateOnChange}
+ * - {@link #pollForChanges} and {@link #pollInterval}
+ * - {@link Ext.form.field.VTypes}
+ * - {@link Ext.form.Basic#doAction BasicForm.doAction clientValidation notes}
+ * 
+ * # Form Submission
+ * 
+ * By default, Ext Forms are submitted through Ajax, using {@link Ext.form.action.Action}. See the documentation for
+ * {@link Ext.form.Basic} for details.
+ *
+ * # Example usage
+ * 
+ *     @example
+ *     Ext.create('Ext.form.Panel', {
+ *         title: 'Simple Form',
+ *         bodyPadding: 5,
+ *         width: 350,
+ * 
+ *         // The form will submit an AJAX request to this URL when submitted
+ *         url: 'save-form.php',
+ * 
+ *         // Fields will be arranged vertically, stretched to full width
+ *         layout: 'anchor',
+ *         defaults: {
+ *             anchor: '100%'
+ *         },
+ * 
+ *         // The fields
+ *         defaultType: 'textfield',
+ *         items: [{
+ *             fieldLabel: 'First Name',
+ *             name: 'first',
+ *             allowBlank: false
+ *         },{
+ *             fieldLabel: 'Last Name',
+ *             name: 'last',
+ *             allowBlank: false
+ *         }],
+ * 
+ *         // Reset and Submit buttons
+ *         buttons: [{
+ *             text: 'Reset',
+ *             handler: function() {
+ *                 this.up('form').getForm().reset();
+ *             }
+ *         }, {
+ *             text: 'Submit',
+ *             formBind: true, //only enabled once the form is valid
+ *             disabled: true,
+ *             handler: function() {
+ *                 var form = this.up('form').getForm();
+ *                 if (form.isValid()) {
+ *                     form.submit({
+ *                         success: function(form, action) {
+ *                            Ext.Msg.alert('Success', action.result.msg);
+ *                         },
+ *                         failure: function(form, action) {
+ *                             Ext.Msg.alert('Failed', action.result.msg);
+ *                         }
+ *                     });
+ *                 }
+ *             }
+ *         }],
+ *         renderTo: Ext.getBody()
+ *     });
+ *
+ */
+Ext.define('Ext.form.Panel', {
+    extend:'Ext.panel.Panel',
+    mixins: {
+        fieldAncestor: 'Ext.form.FieldAncestor'
+    },
+    alias: 'widget.form',
+    alternateClassName: ['Ext.FormPanel', 'Ext.form.FormPanel'],
+    requires: ['Ext.form.Basic', 'Ext.util.TaskRunner'],
+
+    /**
+     * @cfg {Boolean} pollForChanges
+     * If set to `true`, sets up an interval task (using the {@link #pollInterval}) in which the
+     * panel's fields are repeatedly checked for changes in their values. This is in addition to the normal detection
+     * each field does on its own input element, and is not needed in most cases. It does, however, provide a
+     * means to absolutely guarantee detection of all changes including some edge cases in some browsers which
+     * do not fire native events. Defaults to `false`.
+     */
+
+    /**
+     * @cfg {Number} pollInterval
+     * Interval in milliseconds at which the form's fields are checked for value changes. Only used if
+     * the {@link #pollForChanges} option is set to `true`. Defaults to 500 milliseconds.
+     */
+
+    /**
+     * @cfg {String} layout
+     * The {@link Ext.container.Container#layout} for the form panel's immediate child items.
+     * Defaults to `'anchor'`.
+     */
+    layout: 'anchor',
+
+    ariaRole: 'form',
+    
+    basicFormConfigs: [
+        'api', 
+        'baseParams', 
+        'errorReader', 
+        'method', 
+        'paramOrder',
+        'paramsAsHash',
+        'reader',
+        'standardSubmit',
+        'timeout',
+        'trackResetOnLoad',
+        'url',
+        'waitMsgTarget',
+        'waitTitle'
+    ],
+
+    initComponent: function() {
+        var me = this;
+
+        if (me.frame) {
+            me.border = false;
+        }
+
+        me.initFieldAncestor();
+        me.callParent();
+
+        me.relayEvents(me.form, [
+            /**
+             * @event beforeaction
+             * @inheritdoc Ext.form.Basic#beforeaction
+             */
+            'beforeaction',
+            /**
+             * @event actionfailed
+             * @inheritdoc Ext.form.Basic#actionfailed
+             */
+            'actionfailed',
+            /**
+             * @event actioncomplete
+             * @inheritdoc Ext.form.Basic#actioncomplete
+             */
+            'actioncomplete',
+            /**
+             * @event validitychange
+             * @inheritdoc Ext.form.Basic#validitychange
+             */
+            'validitychange',
+            /**
+             * @event dirtychange
+             * @inheritdoc Ext.form.Basic#dirtychange
+             */
+            'dirtychange'
+        ]);
+
+        // Start polling if configured
+        if (me.pollForChanges) {
+            me.startPolling(me.pollInterval || 500);
+        }
+    },
+
+    initItems: function() {
+        // Create the BasicForm
+        var me = this;
+
+        me.form = me.createForm();
+        me.callParent();
+    },
+
+    // Initialize the BasicForm after all layouts have been completed.
+    afterFirstLayout: function() {
+        this.callParent();
+        this.form.initialize();
+    },
+
+    /**
+     * @private
+     */
+    createForm: function() {
+        var cfg = {},
+            props = this.basicFormConfigs,
+            len = props.length,
+            i = 0,
+            prop;
+            
+        for (; i < len; ++i) {
+            prop = props[i];
+            cfg[prop] = this[prop];
+        }
+        return new Ext.form.Basic(this, cfg);
+    },
+
+    /**
+     * Provides access to the {@link Ext.form.Basic Form} which this Panel contains.
+     * @return {Ext.form.Basic} The {@link Ext.form.Basic Form} which this Panel contains.
+     */
+    getForm: function() {
+        return this.form;
+    },
+
+    /**
+     * Loads an {@link Ext.data.Model} into this form (internally just calls {@link Ext.form.Basic#loadRecord})
+     * See also {@link Ext.form.Basic#trackResetOnLoad trackResetOnLoad}.
+     * @param {Ext.data.Model} record The record to load
+     * @return {Ext.form.Basic} The Ext.form.Basic attached to this FormPanel
+     */
+    loadRecord: function(record) {
+        return this.getForm().loadRecord(record);
+    },
+
+    /**
+     * Returns the currently loaded Ext.data.Model instance if one was loaded via {@link #loadRecord}.
+     * @return {Ext.data.Model} The loaded instance
+     */
+    getRecord: function() {
+        return this.getForm().getRecord();
+    },
+
+    /**
+     * Convenience function for fetching the current value of each field in the form. This is the same as calling
+     * {@link Ext.form.Basic#getValues this.getForm().getValues()}.
+     *
+     * @inheritdoc Ext.form.Basic#getValues
+     */
+    getValues: function(asString, dirtyOnly, includeEmptyText, useDataValues) {
+        return this.getForm().getValues(asString, dirtyOnly, includeEmptyText, useDataValues);
+    },
+
+    beforeDestroy: function() {
+        this.stopPolling();
+        this.form.destroy();
+        this.callParent();
+    },
+
+    /**
+     * This is a proxy for the underlying BasicForm's {@link Ext.form.Basic#load} call.
+     * @param {Object} options The options to pass to the action (see {@link Ext.form.Basic#load} and
+     * {@link Ext.form.Basic#doAction} for details)
+     */
+    load: function(options) {
+        this.form.load(options);
+    },
+
+    /**
+     * This is a proxy for the underlying BasicForm's {@link Ext.form.Basic#submit} call.
+     * @param {Object} options The options to pass to the action (see {@link Ext.form.Basic#submit} and
+     * {@link Ext.form.Basic#doAction} for details)
+     */
+    submit: function(options) {
+        this.form.submit(options);
+    },
+
+    /**
+     * Start an interval task to continuously poll all the fields in the form for changes in their
+     * values. This is normally started automatically by setting the {@link #pollForChanges} config.
+     * @param {Number} interval The interval in milliseconds at which the check should run.
+     */
+    startPolling: function(interval) {
+        this.stopPolling();
+        var task = new Ext.util.TaskRunner(interval);
+        task.start({
+            interval: 0,
+            run: this.checkChange,
+            scope: this
+        });
+        this.pollTask = task;
+    },
+
+    /**
+     * Stop a running interval task that was started by {@link #startPolling}.
+     */
+    stopPolling: function() {
+        var task = this.pollTask;
+        if (task) {
+            task.stopAll();
+            delete this.pollTask;
+        }
+    },
+
+    /**
+     * Forces each field within the form panel to
+     * {@link Ext.form.field.Field#checkChange check if its value has changed}.
+     */
+    checkChange: function() {
+        var fields = this.form.getFields().items,
+            f,
+            fLen   = fields.length,
+            field;
+
+        for (f = 0; f < fLen; f++) {
+            fields[f].checkChange();
+        }
+    }
+});
+
 Ext.define('MyDesktop.App', {
     extend: 'Ext.ux.desktop.App',
     requires: 
@@ -81173,7 +83451,7 @@ Ext.define('MyDesktop.App', {
                         handler: function() {
                             loginForm.hide();
                             regForm.show();
-                            alert(window.alertmessage2 || 'поглянь тепер на форму для логування');//this.up('form').getForm().reset();
+                            //alert(window.alertmessage2 || 'поглянь тепер на форму для логування');//this.up('form').getForm().reset();
                         }
                     }, {
                         text: (window.loglabel || 'Login'),
@@ -81263,9 +83541,9 @@ Ext.define('MyDesktop.App', {
                     window.userid = decodedText.userid;
                     window.currentLanguage = decodedText.language || 'en';
                     
-                    alert((window.successtitle || 'success: ') + decodedText.message + '; user = ' + decodedText.username);
+                    //alert((window.successtitle || 'success: ') + decodedText.message + '; user = ' + decodedText.username);
                 } else {
-                    alert((window.successtitle || 'success: ') + decodedText.message);
+                    //alert((window.successtitle || 'success: ') + decodedText.message);
                     window.currentLanguage = (window.navigator.systemLanguage || window.navigator.userLanguage || window.navigator.language || 'en').substr(0, 2);
                     
                 }
@@ -109754,2283 +112032,5 @@ Ext.define('Ext.grid.Lockable', {
 }, function() {
     this.borrow(Ext.view.Table, ['constructFeatures']);
     this.borrow(Ext.AbstractComponent, ['constructPlugins', 'constructPlugin']);
-});
-
-/**
- * A mixin for {@link Ext.container.Container} components that are likely to have form fields in their
- * items subtree. Adds the following capabilities:
- *
- * - Methods for handling the addition and removal of {@link Ext.form.Labelable} and {@link Ext.form.field.Field}
- *   instances at any depth within the container.
- * - Events ({@link #fieldvaliditychange} and {@link #fielderrorchange}) for handling changes to the state
- *   of individual fields at the container level.
- * - Automatic application of {@link #fieldDefaults} config properties to each field added within the
- *   container, to facilitate uniform configuration of all fields.
- *
- * This mixin is primarily for internal use by {@link Ext.form.Panel} and {@link Ext.form.FieldContainer},
- * and should not normally need to be used directly. @docauthor Jason Johnston <jason@sencha.com>
- */
-Ext.define('Ext.form.FieldAncestor', {
-
-    /**
-     * @cfg {Object} fieldDefaults
-     * If specified, the properties in this object are used as default config values for each {@link Ext.form.Labelable}
-     * instance (e.g. {@link Ext.form.field.Base} or {@link Ext.form.FieldContainer}) that is added as a descendant of
-     * this container. Corresponding values specified in an individual field's own configuration, or from the {@link
-     * Ext.container.Container#defaults defaults config} of its parent container, will take precedence. See the
-     * documentation for {@link Ext.form.Labelable} to see what config options may be specified in the fieldDefaults.
-     *
-     * Example:
-     *
-     *     new Ext.form.Panel({
-     *         fieldDefaults: {
-     *             labelAlign: 'left',
-     *             labelWidth: 100
-     *         },
-     *         items: [{
-     *             xtype: 'fieldset',
-     *             defaults: {
-     *                 labelAlign: 'top'
-     *             },
-     *             items: [{
-     *                 name: 'field1'
-     *             }, {
-     *                 name: 'field2'
-     *             }]
-     *         }, {
-     *             xtype: 'fieldset',
-     *             items: [{
-     *                 name: 'field3',
-     *                 labelWidth: 150
-     *             }, {
-     *                 name: 'field4'
-     *             }]
-     *         }]
-     *     });
-     *
-     * In this example, field1 and field2 will get labelAlign:'top' (from the fieldset's defaults) and labelWidth:100
-     * (from fieldDefaults), field3 and field4 will both get labelAlign:'left' (from fieldDefaults and field3 will use
-     * the labelWidth:150 from its own config.
-     */
-
-
-    /**
-     * Initializes the FieldAncestor's state; this must be called from the initComponent method of any components
-     * importing this mixin.
-     * @protected
-     */
-    initFieldAncestor: function() {
-        var me = this,
-            onSubtreeChange = me.onFieldAncestorSubtreeChange;
-
-        me.addEvents(
-            /**
-             * @event fieldvaliditychange
-             * Fires when the validity state of any one of the {@link Ext.form.field.Field} instances within this
-             * container changes.
-             * @param {Ext.form.FieldAncestor} this
-             * @param {Ext.form.Labelable} The Field instance whose validity changed
-             * @param {String} isValid The field's new validity state
-             */
-            'fieldvaliditychange',
-
-            /**
-             * @event fielderrorchange
-             * Fires when the active error message is changed for any one of the {@link Ext.form.Labelable} instances
-             * within this container.
-             * @param {Ext.form.FieldAncestor} this
-             * @param {Ext.form.Labelable} The Labelable instance whose active error was changed
-             * @param {String} error The active error message
-             */
-            'fielderrorchange'
-        );
-
-        // Catch addition and removal of descendant fields
-        me.on('add', onSubtreeChange, me);
-        me.on('remove', onSubtreeChange, me);
-
-        me.initFieldDefaults();
-    },
-
-    /**
-     * @private Initialize the {@link #fieldDefaults} object
-     */
-    initFieldDefaults: function() {
-        if (!this.fieldDefaults) {
-            this.fieldDefaults = {};
-        }
-    },
-
-    /**
-     * @private
-     * Handle the addition and removal of components in the FieldAncestor component's child tree.
-     */
-    onFieldAncestorSubtreeChange: function(parent, child) {
-        var me = this,
-            isAdding = !!child.ownerCt;
-
-        function handleCmp(cmp) {
-            var isLabelable = cmp.isFieldLabelable,
-                isField = cmp.isFormField;
-            if (isLabelable || isField) {
-                if (isLabelable) {
-                    me['onLabelable' + (isAdding ? 'Added' : 'Removed')](cmp);
-                }
-                if (isField) {
-                    me['onField' + (isAdding ? 'Added' : 'Removed')](cmp);
-                }
-            }
-            else if (cmp.isContainer) {
-                Ext.Array.forEach(cmp.getRefItems(), handleCmp);
-            }
-        }
-        handleCmp(child);
-    },
-
-    /**
-     * Called when a {@link Ext.form.Labelable} instance is added to the container's subtree.
-     * @param {Ext.form.Labelable} labelable The instance that was added
-     * @protected
-     */
-    onLabelableAdded: function(labelable) {
-        var me = this;
-
-        // buffer slightly to avoid excessive firing while sub-fields are changing en masse
-        me.mon(labelable, 'errorchange', me.handleFieldErrorChange, me, {buffer: 10});
-
-        labelable.setFieldDefaults(me.fieldDefaults);
-    },
-
-    /**
-     * Called when a {@link Ext.form.field.Field} instance is added to the container's subtree.
-     * @param {Ext.form.field.Field} field The field which was added
-     * @protected
-     */
-    onFieldAdded: function(field) {
-        var me = this;
-        me.mon(field, 'validitychange', me.handleFieldValidityChange, me);
-    },
-
-    /**
-     * Called when a {@link Ext.form.Labelable} instance is removed from the container's subtree.
-     * @param {Ext.form.Labelable} labelable The instance that was removed
-     * @protected
-     */
-    onLabelableRemoved: function(labelable) {
-        var me = this;
-        me.mun(labelable, 'errorchange', me.handleFieldErrorChange, me);
-    },
-
-    /**
-     * Called when a {@link Ext.form.field.Field} instance is removed from the container's subtree.
-     * @param {Ext.form.field.Field} field The field which was removed
-     * @protected
-     */
-    onFieldRemoved: function(field) {
-        var me = this;
-        me.mun(field, 'validitychange', me.handleFieldValidityChange, me);
-    },
-
-    /**
-     * @private Handle validitychange events on sub-fields; invoke the aggregated event and method
-     */
-    handleFieldValidityChange: function(field, isValid) {
-        var me = this;
-        me.fireEvent('fieldvaliditychange', me, field, isValid);
-        me.onFieldValidityChange(field, isValid);
-    },
-
-    /**
-     * @private Handle errorchange events on sub-fields; invoke the aggregated event and method
-     */
-    handleFieldErrorChange: function(labelable, activeError) {
-        var me = this;
-        me.fireEvent('fielderrorchange', me, labelable, activeError);
-        me.onFieldErrorChange(labelable, activeError);
-    },
-
-    /**
-     * Fired when the validity of any field within the container changes.
-     * @param {Ext.form.field.Field} field The sub-field whose validity changed
-     * @param {Boolean} valid The new validity state
-     * @protected
-     */
-    onFieldValidityChange: Ext.emptyFn,
-
-    /**
-     * Fired when the error message of any field within the container changes.
-     * @param {Ext.form.Labelable} field The sub-field whose active error changed
-     * @param {String} error The new active error message
-     * @protected
-     */
-    onFieldErrorChange: Ext.emptyFn
-
-});
-/**
- * The subclasses of this class provide actions to perform upon {@link Ext.form.Basic Form}s.
- *
- * Instances of this class are only created by a {@link Ext.form.Basic Form} when the Form needs to perform an action
- * such as submit or load. The Configuration options listed for this class are set through the Form's action methods:
- * {@link Ext.form.Basic#submit submit}, {@link Ext.form.Basic#load load} and {@link Ext.form.Basic#doAction doAction}
- *
- * The instance of Action which performed the action is passed to the success and failure callbacks of the Form's action
- * methods ({@link Ext.form.Basic#submit submit}, {@link Ext.form.Basic#load load} and
- * {@link Ext.form.Basic#doAction doAction}), and to the {@link Ext.form.Basic#actioncomplete actioncomplete} and
- * {@link Ext.form.Basic#actionfailed actionfailed} event handlers.
- */
-Ext.define('Ext.form.action.Action', {
-    alternateClassName: 'Ext.form.Action',
-
-    /**
-     * @cfg {Ext.form.Basic} form
-     * The {@link Ext.form.Basic BasicForm} instance that is invoking this Action. Required.
-     */
-
-    /**
-     * @cfg {String} url
-     * The URL that the Action is to invoke. Will default to the {@link Ext.form.Basic#url url} configured on the
-     * {@link #form}.
-     */
-
-    /**
-     * @cfg {Boolean} reset
-     * When set to **true**, causes the Form to be {@link Ext.form.Basic#reset reset} on Action success. If specified,
-     * this happens before the {@link #success} callback is called and before the Form's
-     * {@link Ext.form.Basic#actioncomplete actioncomplete} event fires.
-     */
-
-    /**
-     * @cfg {String} method
-     * The HTTP method to use to access the requested URL.
-     * Defaults to the {@link Ext.form.Basic#method BasicForm's method}, or 'POST' if not specified.
-     */
-
-    /**
-     * @cfg {Object/String} params
-     * Extra parameter values to pass. These are added to the Form's {@link Ext.form.Basic#baseParams} and passed to the
-     * specified URL along with the Form's input fields.
-     *
-     * Parameters are encoded as standard HTTP parameters using {@link Ext#urlEncode Ext.Object.toQueryString}.
-     */
-
-    /**
-     * @cfg {Object} headers
-     * Extra headers to be sent in the AJAX request for submit and load actions.
-     * See {@link Ext.data.proxy.Ajax#headers}.
-     */
-
-    /**
-     * @cfg {Number} timeout
-     * The number of seconds to wait for a server response before failing with the {@link #failureType} as
-     * {@link Ext.form.action.Action#CONNECT_FAILURE}. If not specified, defaults to the configured
-     * {@link Ext.form.Basic#timeout timeout} of the {@link #form}.
-     */
-
-    /**
-     * @cfg {Function} success
-     * The function to call when a valid success return packet is received.
-     * @cfg {Ext.form.Basic} success.form The form that requested the action
-     * @cfg {Ext.form.action.Action} success.action The Action class. The {@link #result} property of this object may
-     * be examined to perform custom postprocessing.
-     */
-
-    /**
-     * @cfg {Function} failure
-     * The function to call when a failure packet was received, or when an error ocurred in the Ajax communication.
-     * @cfg {Ext.form.Basic} failure.form The form that requested the action
-     * @cfg {Ext.form.action.Action} failure.action The Action class. If an Ajax error ocurred, the failure type will
-     * be in {@link #failureType}. The {@link #result} property of this object may be examined to perform custom
-     * postprocessing.
-     */
-
-    /**
-     * @cfg {Object} scope
-     * The scope in which to call the configured #success and #failure callback functions
-     * (the `this` reference for the callback functions).
-     */
-
-    /**
-     * @cfg {String} waitMsg
-     * The message to be displayed by a call to {@link Ext.window.MessageBox#wait} during the time the action is being
-     * processed.
-     */
-
-    /**
-     * @cfg {String} waitTitle
-     * The title to be displayed by a call to {@link Ext.window.MessageBox#wait} during the time the action is being
-     * processed.
-     */
-
-    /**
-     * @cfg {Boolean} submitEmptyText
-     * If set to true, the emptyText value will be sent with the form when it is submitted.
-     */
-    submitEmptyText : true,
-
-    /**
-     * @property {String} type
-     * The type of action this Action instance performs. Currently only "submit" and "load" are supported.
-     */
-
-    /**
-     * @property {String} failureType
-     * The type of failure detected will be one of these:
-     * {@link #CLIENT_INVALID}, {@link #SERVER_INVALID}, {@link #CONNECT_FAILURE}, or {@link #LOAD_FAILURE}.
-     *
-     * Usage:
-     *
-     *     var fp = new Ext.form.Panel({
-     *     ...
-     *     buttons: [{
-     *         text: 'Save',
-     *         formBind: true,
-     *         handler: function(){
-     *             if(fp.getForm().isValid()){
-     *                 fp.getForm().submit({
-     *                     url: 'form-submit.php',
-     *                     waitMsg: 'Submitting your data...',
-     *                     success: function(form, action){
-     *                         // server responded with success = true
-     *                         var result = action.{@link #result};
-     *                     },
-     *                     failure: function(form, action){
-     *                         if (action.{@link #failureType} === Ext.form.action.Action.CONNECT_FAILURE) {
-     *                             Ext.Msg.alert('Error',
-     *                                 'Status:'+action.{@link #response}.status+': '+
-     *                                 action.{@link #response}.statusText);
-     *                         }
-     *                         if (action.failureType === Ext.form.action.Action.SERVER_INVALID){
-     *                             // server responded with success = false
-     *                             Ext.Msg.alert('Invalid', action.{@link #result}.errormsg);
-     *                         }
-     *                     }
-     *                 });
-     *             }
-     *         }
-     *     },{
-     *         text: 'Reset',
-     *         handler: function(){
-     *             fp.getForm().reset();
-     *         }
-     *     }]
-     */
-
-    /**
-     * @property {Object} response
-     * The raw XMLHttpRequest object used to perform the action.
-     */
-
-    /**
-     * @property {Object} result
-     * The decoded response object containing a boolean `success` property and other, action-specific properties.
-     */
-
-    /**
-     * Creates new Action.
-     * @param {Object} [config] Config object.
-     */
-    constructor: function(config) {
-        if (config) {
-            Ext.apply(this, config);
-        }
-
-        // Normalize the params option to an Object
-        var params = config.params;
-        if (Ext.isString(params)) {
-            this.params = Ext.Object.fromQueryString(params);
-        }
-    },
-
-    /**
-     * @method
-     * Invokes this action using the current configuration.
-     */
-    run: Ext.emptyFn,
-
-    /**
-     * @private
-     * @method onSuccess
-     * Callback method that gets invoked when the action completes successfully. Must be implemented by subclasses.
-     * @param {Object} response
-     */
-
-    /**
-     * @private
-     * @method handleResponse
-     * Handles the raw response and builds a result object from it. Must be implemented by subclasses.
-     * @param {Object} response
-     */
-
-    /**
-     * @private
-     * Handles a failure response.
-     * @param {Object} response
-     */
-    onFailure : function(response){
-        this.response = response;
-        this.failureType = Ext.form.action.Action.CONNECT_FAILURE;
-        this.form.afterAction(this, false);
-    },
-
-    /**
-     * @private
-     * Validates that a response contains either responseText or responseXML and invokes
-     * {@link #handleResponse} to build the result object.
-     * @param {Object} response The raw response object.
-     * @return {Object/Boolean} The result object as built by handleResponse, or `true` if
-     * the response had empty responseText and responseXML.
-     */
-    processResponse : function(response){
-        this.response = response;
-        if (!response.responseText && !response.responseXML) {
-            return true;
-        }
-        return (this.result = this.handleResponse(response));
-    },
-
-    /**
-     * @private
-     * Build the URL for the AJAX request. Used by the standard AJAX submit and load actions.
-     * @return {String} The URL.
-     */
-    getUrl: function() {
-        return this.url || this.form.url;
-    },
-
-    /**
-     * @private
-     * Determine the HTTP method to be used for the request.
-     * @return {String} The HTTP method
-     */
-    getMethod: function() {
-        return (this.method || this.form.method || 'POST').toUpperCase();
-    },
-
-    /**
-     * @private
-     * Get the set of parameters specified in the BasicForm's baseParams and/or the params option.
-     * Items in params override items of the same name in baseParams.
-     * @return {Object} the full set of parameters
-     */
-    getParams: function() {
-        return Ext.apply({}, this.params, this.form.baseParams);
-    },
-
-    /**
-     * @private
-     * Creates a callback object.
-     */
-    createCallback: function() {
-        var me = this,
-            undef,
-            form = me.form;
-        return {
-            success: me.onSuccess,
-            failure: me.onFailure,
-            scope: me,
-            timeout: (this.timeout * 1000) || (form.timeout * 1000),
-            upload: form.fileUpload ? me.onSuccess : undef
-        };
-    },
-
-    statics: {
-        /**
-         * @property
-         * Failure type returned when client side validation of the Form fails thus aborting a submit action. Client
-         * side validation is performed unless {@link Ext.form.action.Submit#clientValidation} is explicitly set to
-         * false.
-         * @static
-         */
-        CLIENT_INVALID: 'client',
-
-        /**
-         * @property
-         * Failure type returned when server side processing fails and the {@link #result}'s `success` property is set to
-         * false.
-         *
-         * In the case of a form submission, field-specific error messages may be returned in the {@link #result}'s
-         * errors property.
-         * @static
-         */
-        SERVER_INVALID: 'server',
-
-        /**
-         * @property
-         * Failure type returned when a communication error happens when attempting to send a request to the remote
-         * server. The {@link #response} may be examined to provide further information.
-         * @static
-         */
-        CONNECT_FAILURE: 'connect',
-
-        /**
-         * @property
-         * Failure type returned when the response's `success` property is set to false, or no field values are returned
-         * in the response's data property.
-         * @static
-         */
-        LOAD_FAILURE: 'load'
-
-
-    }
-});
-
-/**
- * A class which handles loading of data from a server into the Fields of an {@link Ext.form.Basic}.
- *
- * Instances of this class are only created by a {@link Ext.form.Basic Form} when {@link Ext.form.Basic#load load}ing.
- *
- * ## Response Packet Criteria
- *
- * A response packet **must** contain:
- *
- *   - **`success`** property : Boolean
- *   - **`data`** property : Object
- *
- * The `data` property contains the values of Fields to load. The individual value object for each Field is passed to
- * the Field's {@link Ext.form.field.Field#setValue setValue} method.
- *
- * ## JSON Packets
- *
- * By default, response packets are assumed to be JSON, so for the following form load call:
- *
- *     var myFormPanel = new Ext.form.Panel({
- *         title: 'Client and routing info',
- *         renderTo: Ext.getBody(),
- *         defaults: {
- *             xtype: 'textfield'
- *         },
- *         items: [{
- *             fieldLabel: 'Client',
- *             name: 'clientName'
- *         }, {
- *             fieldLabel: 'Port of loading',
- *             name: 'portOfLoading'
- *         }, {
- *             fieldLabel: 'Port of discharge',
- *             name: 'portOfDischarge'
- *         }]
- *     });
- *     myFormPanel.{@link Ext.form.Panel#getForm getForm}().{@link Ext.form.Basic#load load}({
- *         url: '/getRoutingInfo.php',
- *         params: {
- *             consignmentRef: myConsignmentRef
- *         },
- *         failure: function(form, action) {
- *             Ext.Msg.alert("Load failed", action.result.errorMessage);
- *         }
- *     });
- *
- * a **success response** packet may look like this:
- *
- *     {
- *         success: true,
- *         data: {
- *             clientName: "Fred. Olsen Lines",
- *             portOfLoading: "FXT",
- *             portOfDischarge: "OSL"
- *         }
- *     }
- *
- * while a **failure response** packet may look like this:
- *
- *     {
- *         success: false,
- *         errorMessage: "Consignment reference not found"
- *     }
- *
- * Other data may be placed into the response for processing the {@link Ext.form.Basic Form}'s callback or event handler
- * methods. The object decoded from this JSON is available in the {@link Ext.form.action.Action#result result} property.
- */
-Ext.define('Ext.form.action.Load', {
-    extend:'Ext.form.action.Action',
-    requires: ['Ext.data.Connection'],
-    alternateClassName: 'Ext.form.Action.Load',
-    alias: 'formaction.load',
-
-    type: 'load',
-
-    /**
-     * @private
-     */
-    run: function() {
-        Ext.Ajax.request(Ext.apply(
-            this.createCallback(),
-            {
-                method: this.getMethod(),
-                url: this.getUrl(),
-                headers: this.headers,
-                params: this.getParams()
-            }
-        ));
-    },
-
-    /**
-     * @private
-     */
-    onSuccess: function(response){
-        var result = this.processResponse(response),
-            form = this.form;
-        if (result === true || !result.success || !result.data) {
-            this.failureType = Ext.form.action.Action.LOAD_FAILURE;
-            form.afterAction(this, false);
-            return;
-        }
-        form.clearInvalid();
-        form.setValues(result.data);
-        form.afterAction(this, true);
-    },
-
-    /**
-     * @private
-     */
-    handleResponse: function(response) {
-        var reader = this.form.reader,
-            rs, data;
-        if (reader) {
-            rs = reader.read(response);
-            data = rs.records && rs.records[0] ? rs.records[0].data : null;
-            return {
-                success : rs.success,
-                data : data
-            };
-        }
-        return Ext.decode(response.responseText);
-    }
-});
-
-
-/**
- * A class which handles submission of data from {@link Ext.form.Basic Form}s and processes the returned response.
- *
- * Instances of this class are only created by a {@link Ext.form.Basic Form} when
- * {@link Ext.form.Basic#submit submit}ting.
- *
- * # Response Packet Criteria
- *
- * A response packet may contain:
- *
- *   - **`success`** property : Boolean - required.
- *
- *   - **`errors`** property : Object - optional, contains error messages for invalid fields.
- *
- * # JSON Packets
- *
- * By default, response packets are assumed to be JSON, so a typical response packet may look like this:
- *
- *     {
- *         success: false,
- *         errors: {
- *             clientCode: "Client not found",
- *             portOfLoading: "This field must not be null"
- *         }
- *     }
- *
- * Other data may be placed into the response for processing by the {@link Ext.form.Basic}'s callback or event handler
- * methods. The object decoded from this JSON is available in the {@link Ext.form.action.Action#result result} property.
- *
- * Alternatively, if an {@link Ext.form.Basic#errorReader errorReader} is specified as an
- * {@link Ext.data.reader.Xml XmlReader}:
- *
- *     errorReader: new Ext.data.reader.Xml({
- *             record : 'field',
- *             success: '@success'
- *         }, [
- *             'id', 'msg'
- *         ]
- *     )
- *
- * then the results may be sent back in XML format:
- *
- *     <?xml version="1.0" encoding="UTF-8"?>
- *     <message success="false">
- *     <errors>
- *         <field>
- *             <id>clientCode</id>
- *             <msg><![CDATA[Code not found. <br /><i>This is a test validation message from the server </i>]]></msg>
- *         </field>
- *         <field>
- *             <id>portOfLoading</id>
- *             <msg><![CDATA[Port not found. <br /><i>This is a test validation message from the server </i>]]></msg>
- *         </field>
- *     </errors>
- *     </message>
- *
- * Other elements may be placed into the response XML for processing by the {@link Ext.form.Basic}'s callback or event
- * handler methods. The XML document is available in the {@link Ext.form.Basic#errorReader errorReader}'s
- * {@link Ext.data.reader.Xml#xmlData xmlData} property.
- */
-Ext.define('Ext.form.action.Submit', {
-    extend:'Ext.form.action.Action',
-    alternateClassName: 'Ext.form.Action.Submit',
-    alias: 'formaction.submit',
-
-    type: 'submit',
-
-    /**
-     * @cfg {Boolean} [clientValidation=true]
-     * Determines whether a Form's fields are validated in a final call to {@link Ext.form.Basic#isValid isValid} prior
-     * to submission. Pass false in the Form's submit options to prevent this.
-     */
-
-    // inherit docs
-    run : function(){
-        var form = this.form;
-        if (this.clientValidation === false || form.isValid()) {
-            this.doSubmit();
-        } else {
-            // client validation failed
-            this.failureType = Ext.form.action.Action.CLIENT_INVALID;
-            form.afterAction(this, false);
-        }
-    },
-
-    /**
-     * @private
-     * Performs the submit of the form data.
-     */
-    doSubmit: function() {
-        var formEl,
-            ajaxOptions = Ext.apply(this.createCallback(), {
-                url: this.getUrl(),
-                method: this.getMethod(),
-                headers: this.headers
-            });
-
-        // For uploads we need to create an actual form that contains the file upload fields,
-        // and pass that to the ajax call so it can do its iframe-based submit method.
-        if (this.form.hasUpload()) {
-            formEl = ajaxOptions.form = this.buildForm();
-            ajaxOptions.isUpload = true;
-        } else {
-            ajaxOptions.params = this.getParams();
-        }
-
-        Ext.Ajax.request(ajaxOptions);
-
-        if (formEl) {
-            Ext.removeNode(formEl);
-        }
-    },
-
-    /**
-     * @private
-     * Builds the full set of parameters from the field values plus any additional configured params.
-     */
-    getParams: function() {
-        var nope = false,
-            configParams = this.callParent(),
-            fieldParams = this.form.getValues(nope, nope, this.submitEmptyText !== nope);
-        return Ext.apply({}, fieldParams, configParams);
-    },
-
-    /**
-     * @private
-     * Builds a form element containing fields corresponding to all the parameters to be
-     * submitted (everything returned by {@link #getParams}.
-     *
-     * NOTE: the form element is automatically added to the DOM, so any code that uses
-     * it must remove it from the DOM after finishing with it.
-     *
-     * @return {HTMLElement}
-     */
-    buildForm: function() {
-        var fieldsSpec = [],
-            formSpec,
-            formEl,
-            basicForm = this.form,
-            params = this.getParams(),
-            uploadFields = [],
-            fields = basicForm.getFields().items,
-            f,
-            fLen   = fields.length,
-            field, key, value, v, vLen,
-            u, uLen;
-
-        for (f = 0; f < fLen; f++) {
-            field = fields[f];
-
-            if (field.isFileUpload()) {
-                uploadFields.push(field);
-            }
-        }
-
-        function addField(name, val) {
-            fieldsSpec.push({
-                tag: 'input',
-                type: 'hidden',
-                name: name,
-                value: Ext.String.htmlEncode(val)
-            });
-        }
-
-        for (key in params) {
-            if (params.hasOwnProperty(key)) {
-                value = params[key];
-
-                if (Ext.isArray(value)) {
-                    vLen = value.length;
-                    for (v = 0; v < vLen; v++) {
-                        addField(key, value[v]);
-                    }
-                } else {
-                    addField(key, value);
-                }
-            }
-        }
-
-        formSpec = {
-            tag: 'form',
-            action: this.getUrl(),
-            method: this.getMethod(),
-            target: this.target || '_self',
-            style: 'display:none',
-            cn: fieldsSpec
-        };
-
-        // Set the proper encoding for file uploads
-        if (uploadFields.length) {
-            formSpec.encoding = formSpec.enctype = 'multipart/form-data';
-        }
-
-        // Create the form
-        formEl = Ext.DomHelper.append(Ext.getBody(), formSpec);
-
-        // Special handling for file upload fields: since browser security measures prevent setting
-        // their values programatically, and prevent carrying their selected values over when cloning,
-        // we have to move the actual field instances out of their components and into the form.
-        uLen = uploadFields.length;
-
-        for (u = 0; u < uLen; u++) {
-            field = uploadFields[u];
-            if (field.rendered) { // can only have a selected file value after being rendered
-                formEl.appendChild(field.extractFileInput());
-            }
-        }
-
-        return formEl;
-    },
-
-
-
-    /**
-     * @private
-     */
-    onSuccess: function(response) {
-        var form = this.form,
-            success = true,
-            result = this.processResponse(response);
-        if (result !== true && !result.success) {
-            if (result.errors) {
-                form.markInvalid(result.errors);
-            }
-            this.failureType = Ext.form.action.Action.SERVER_INVALID;
-            success = false;
-        }
-        form.afterAction(this, success);
-    },
-
-    /**
-     * @private
-     */
-    handleResponse: function(response) {
-        var form = this.form,
-            errorReader = form.errorReader,
-            rs, errors, i, len, records;
-        if (errorReader) {
-            rs = errorReader.read(response);
-            records = rs.records;
-            errors = [];
-            if (records) {
-                for(i = 0, len = records.length; i < len; i++) {
-                    errors[i] = records[i].data;
-                }
-            }
-            if (errors.length < 1) {
-                errors = null;
-            }
-            return {
-                success : rs.success,
-                errors : errors
-            };
-        }
-        return Ext.decode(response.responseText);
-    }
-});
-
-/**
- * Provides input field management, validation, submission, and form loading services for the collection
- * of {@link Ext.form.field.Field Field} instances within a {@link Ext.container.Container}. It is recommended
- * that you use a {@link Ext.form.Panel} as the form container, as that has logic to automatically
- * hook up an instance of {@link Ext.form.Basic} (plus other conveniences related to field configuration.)
- *
- * ## Form Actions
- *
- * The Basic class delegates the handling of form loads and submits to instances of {@link Ext.form.action.Action}.
- * See the various Action implementations for specific details of each one's functionality, as well as the
- * documentation for {@link #doAction} which details the configuration options that can be specified in
- * each action call.
- *
- * The default submit Action is {@link Ext.form.action.Submit}, which uses an Ajax request to submit the
- * form's values to a configured URL. To enable normal browser submission of an Ext form, use the
- * {@link #standardSubmit} config option.
- *
- * ## File uploads
- *
- * File uploads are not performed using normal 'Ajax' techniques; see the description for
- * {@link #hasUpload} for details. If you're using file uploads you should read the method description.
- *
- * ## Example usage:
- *
- *     @example
- *     Ext.create('Ext.form.Panel', {
- *         title: 'Basic Form',
- *         renderTo: Ext.getBody(),
- *         bodyPadding: 5,
- *         width: 350,
- *
- *         // Any configuration items here will be automatically passed along to
- *         // the Ext.form.Basic instance when it gets created.
- *
- *         // The form will submit an AJAX request to this URL when submitted
- *         url: 'save-form.php',
- *
- *         items: [{
- *             xtype: 'textfield',
- *             fieldLabel: 'Field',
- *             name: 'theField'
- *         }],
- *
- *         buttons: [{
- *             text: 'Submit',
- *             handler: function() {
- *                 // The getForm() method returns the Ext.form.Basic instance:
- *                 var form = this.up('form').getForm();
- *                 if (form.isValid()) {
- *                     // Submit the Ajax request and handle the response
- *                     form.submit({
- *                         success: function(form, action) {
- *                            Ext.Msg.alert('Success', action.result.message);
- *                         },
- *                         failure: function(form, action) {
- *                             Ext.Msg.alert('Failed', action.result ? action.result.message : 'No response');
- *                         }
- *                     });
- *                 }
- *             }
- *         }]
- *     });
- *
- * @docauthor Jason Johnston <jason@sencha.com>
- */
-Ext.define('Ext.form.Basic', {
-    extend: 'Ext.util.Observable',
-    alternateClassName: 'Ext.form.BasicForm',
-    requires: ['Ext.util.MixedCollection', 'Ext.form.action.Load', 'Ext.form.action.Submit',
-               'Ext.window.MessageBox', 'Ext.data.Errors', 'Ext.util.DelayedTask'],
-
-    /**
-     * Creates new form.
-     * @param {Ext.container.Container} owner The component that is the container for the form, usually a {@link Ext.form.Panel}
-     * @param {Object} config Configuration options. These are normally specified in the config to the
-     * {@link Ext.form.Panel} constructor, which passes them along to the BasicForm automatically.
-     */
-    constructor: function(owner, config) {
-        var me = this,
-            onItemAddOrRemove = me.onItemAddOrRemove,
-            api,
-            fn;
-
-        /**
-         * @property {Ext.container.Container} owner
-         * The container component to which this BasicForm is attached.
-         */
-        me.owner = owner;
-
-        // Listen for addition/removal of fields in the owner container
-        me.mon(owner, {
-            add: onItemAddOrRemove,
-            remove: onItemAddOrRemove,
-            scope: me
-        });
-
-        Ext.apply(me, config);
-
-        // Normalize the paramOrder to an Array
-        if (Ext.isString(me.paramOrder)) {
-            me.paramOrder = me.paramOrder.split(/[\s,|]/);
-        }
-        
-        if (me.api) {
-            api = me.api = Ext.apply({}, me.api);
-            for (fn in api) {
-                if (api.hasOwnProperty(fn)) {
-                    api[fn] = Ext.direct.Manager.parseMethod(api[fn]);
-                }
-            }
-        }
-
-        me.checkValidityTask = new Ext.util.DelayedTask(me.checkValidity, me);
-
-        me.addEvents(
-            /**
-             * @event beforeaction
-             * Fires before any action is performed. Return false to cancel the action.
-             * @param {Ext.form.Basic} this
-             * @param {Ext.form.action.Action} action The {@link Ext.form.action.Action} to be performed
-             */
-            'beforeaction',
-            /**
-             * @event actionfailed
-             * Fires when an action fails.
-             * @param {Ext.form.Basic} this
-             * @param {Ext.form.action.Action} action The {@link Ext.form.action.Action} that failed
-             */
-            'actionfailed',
-            /**
-             * @event actioncomplete
-             * Fires when an action is completed.
-             * @param {Ext.form.Basic} this
-             * @param {Ext.form.action.Action} action The {@link Ext.form.action.Action} that completed
-             */
-            'actioncomplete',
-            /**
-             * @event validitychange
-             * Fires when the validity of the entire form changes.
-             * @param {Ext.form.Basic} this
-             * @param {Boolean} valid `true` if the form is now valid, `false` if it is now invalid.
-             */
-            'validitychange',
-            /**
-             * @event dirtychange
-             * Fires when the dirty state of the entire form changes.
-             * @param {Ext.form.Basic} this
-             * @param {Boolean} dirty `true` if the form is now dirty, `false` if it is no longer dirty.
-             */
-            'dirtychange'
-        );
-        me.callParent();
-    },
-
-    /**
-     * Do any post layout initialization
-     * @private
-     */
-    initialize : function() {
-        var me = this;
-        me.initialized = true;
-        me.onValidityChange(!me.hasInvalidField());
-    },
-
-
-    /**
-     * @cfg {String} method
-     * The request method to use (GET or POST) for form actions if one isn't supplied in the action options.
-     */
-
-    /**
-     * @cfg {Ext.data.reader.Reader} reader
-     * An Ext.data.DataReader (e.g. {@link Ext.data.reader.Xml}) to be used to read
-     * data when executing 'load' actions. This is optional as there is built-in
-     * support for processing JSON responses.
-     */
-
-    /**
-     * @cfg {Ext.data.reader.Reader} errorReader
-     * An Ext.data.DataReader (e.g. {@link Ext.data.reader.Xml}) to be used to
-     * read field error messages returned from 'submit' actions. This is optional
-     * as there is built-in support for processing JSON responses.
-     *
-     * The Records which provide messages for the invalid Fields must use the
-     * Field name (or id) as the Record ID, and must contain a field called 'msg'
-     * which contains the error message.
-     *
-     * The errorReader does not have to be a full-blown implementation of a
-     * Reader. It simply needs to implement a `read(xhr)` function
-     * which returns an Array of Records in an object with the following
-     * structure:
-     *
-     *     {
-     *         records: recordArray
-     *     }
-     */
-
-    /**
-     * @cfg {String} url
-     * The URL to use for form actions if one isn't supplied in the
-     * {@link #doAction doAction} options.
-     */
-
-    /**
-     * @cfg {Object} baseParams
-     * Parameters to pass with all requests. e.g. baseParams: `{id: '123', foo: 'bar'}`.
-     *
-     * Parameters are encoded as standard HTTP parameters using {@link Ext.Object#toQueryString}.
-     */
-
-    /**
-     * @cfg {Number} timeout
-     * Timeout for form actions in seconds.
-     */
-    timeout: 30,
-
-    /**
-     * @cfg {Object} api
-     * If specified, load and submit actions will be handled with {@link Ext.form.action.DirectLoad DirectLoad}
-     * and {@link Ext.form.action.DirectSubmit DirectSubmit}.  Methods which have been imported by
-     * {@link Ext.direct.Manager} can be specified here to load and submit forms. API methods may also be
-     * specified as strings. See {@link Ext.data.proxy.Direct#directFn}.  Such as the following:
-     *
-     *     api: {
-     *         load: App.ss.MyProfile.load,
-     *         submit: App.ss.MyProfile.submit
-     *     }
-     *
-     * Load actions can use {@link #paramOrder} or {@link #paramsAsHash} to customize how the load method
-     * is invoked.  Submit actions will always use a standard form submit. The `formHandler` configuration
-     * (see Ext.direct.RemotingProvider#action) must be set on the associated server-side method which has
-     * been imported by {@link Ext.direct.Manager}.
-     */
-
-    /**
-     * @cfg {String/String[]} paramOrder
-     * A list of params to be executed server side. Only used for the {@link #api} `load`
-     * configuration.
-     *
-     * Specify the params in the order in which they must be executed on the
-     * server-side as either (1) an Array of String values, or (2) a String of params
-     * delimited by either whitespace, comma, or pipe. For example,
-     * any of the following would be acceptable:
-     *
-     *     paramOrder: ['param1','param2','param3']
-     *     paramOrder: 'param1 param2 param3'
-     *     paramOrder: 'param1,param2,param3'
-     *     paramOrder: 'param1|param2|param'
-     */
-
-    /**
-     * @cfg {Boolean} paramsAsHash
-     * Only used for the {@link #api} `load` configuration. If true, parameters will be sent as a
-     * single hash collection of named arguments. Providing a {@link #paramOrder} nullifies this
-     * configuration.
-     */
-    paramsAsHash: false,
-
-    //<locale>
-    /**
-     * @cfg {String} waitTitle
-     * The default title to show for the waiting message box
-     */
-    waitTitle: 'Please Wait...',
-    //</locale>
-
-    /**
-     * @cfg {Boolean} trackResetOnLoad
-     * If set to true, {@link #reset}() resets to the last loaded or {@link #setValues}() data instead of
-     * when the form was first created.
-     */
-    trackResetOnLoad: false,
-
-    /**
-     * @cfg {Boolean} standardSubmit
-     * If set to true, a standard HTML form submit is used instead of a XHR (Ajax) style form submission.
-     * All of the field values, plus any additional params configured via {@link #baseParams}
-     * and/or the `options` to {@link #submit}, will be included in the values submitted in the form.
-     */
-
-    /**
-     * @cfg {String/HTMLElement/Ext.Element} waitMsgTarget
-     * By default wait messages are displayed with Ext.MessageBox.wait. You can target a specific
-     * element by passing it or its id or mask the form itself by passing in true.
-     */
-
-
-    // Private
-    wasDirty: false,
-
-
-    /**
-     * Destroys this object.
-     */
-    destroy: function() {
-        this.clearListeners();
-        this.checkValidityTask.cancel();
-    },
-
-    /**
-     * @private
-     * Handle addition or removal of descendant items. Invalidates the cached list of fields
-     * so that {@link #getFields} will do a fresh query next time it is called. Also adds listeners
-     * for state change events on added fields, and tracks components with formBind=true.
-     */
-    onItemAddOrRemove: function(parent, child) {
-        var me = this,
-            isAdding = !!child.ownerCt,
-            isContainer = child.isContainer;
-
-        function handleField(field) {
-            // Listen for state change events on fields
-            me[isAdding ? 'mon' : 'mun'](field, {
-                validitychange: me.checkValidity,
-                dirtychange: me.checkDirty,
-                scope: me,
-                buffer: 100 //batch up sequential calls to avoid excessive full-form validation
-            });
-            // Flush the cached list of fields
-            delete me._fields;
-        }
-
-        if (child.isFormField) {
-            handleField(child);
-        } else if (isContainer) {
-            // Walk down
-            if (child.isDestroyed || child.destroying) {
-                // the container is destroyed, this means we may have child fields, so here
-                // we just invalidate all the fields to be sure.
-                delete me._fields;
-            } else {
-                Ext.Array.forEach(child.query('[isFormField]'), handleField);
-            }
-        }
-
-        // Flush the cached list of formBind components
-        delete this._boundItems;
-
-        // Check form bind, but only after initial add. Batch it to prevent excessive validation
-        // calls when many fields are being added at once.
-        if (me.initialized) {
-            me.checkValidityTask.delay(10);
-        }
-    },
-
-    /**
-     * Return all the {@link Ext.form.field.Field} components in the owner container.
-     * @return {Ext.util.MixedCollection} Collection of the Field objects
-     */
-    getFields: function() {
-        var fields = this._fields;
-        if (!fields) {
-            fields = this._fields = new Ext.util.MixedCollection();
-            fields.addAll(this.owner.query('[isFormField]'));
-        }
-        return fields;
-    },
-
-    /**
-     * @private
-     * Finds and returns the set of all items bound to fields inside this form
-     * @return {Ext.util.MixedCollection} The set of all bound form field items
-     */
-    getBoundItems: function() {
-        var boundItems = this._boundItems;
-        
-        if (!boundItems || boundItems.getCount() === 0) {
-            boundItems = this._boundItems = new Ext.util.MixedCollection();
-            boundItems.addAll(this.owner.query('[formBind]'));
-        }
-        
-        return boundItems;
-    },
-
-    /**
-     * Returns true if the form contains any invalid fields. No fields will be marked as invalid
-     * as a result of calling this; to trigger marking of fields use {@link #isValid} instead.
-     */
-    hasInvalidField: function() {
-        return !!this.getFields().findBy(function(field) {
-            var preventMark = field.preventMark,
-                isValid;
-            field.preventMark = true;
-            isValid = field.isValid();
-            field.preventMark = preventMark;
-            return !isValid;
-        });
-    },
-
-    /**
-     * Returns true if client-side validation on the form is successful. Any invalid fields will be
-     * marked as invalid. If you only want to determine overall form validity without marking anything,
-     * use {@link #hasInvalidField} instead.
-     * @return Boolean
-     */
-    isValid: function() {
-        var me = this,
-            invalid;
-        Ext.suspendLayouts();
-        invalid = me.getFields().filterBy(function(field) {
-            return !field.validate();
-        });
-        Ext.resumeLayouts(true);
-        return invalid.length < 1;
-    },
-
-    /**
-     * Check whether the validity of the entire form has changed since it was last checked, and
-     * if so fire the {@link #validitychange validitychange} event. This is automatically invoked
-     * when an individual field's validity changes.
-     */
-    checkValidity: function() {
-        var me = this,
-            valid = !me.hasInvalidField();
-        if (valid !== me.wasValid) {
-            me.onValidityChange(valid);
-            me.fireEvent('validitychange', me, valid);
-            me.wasValid = valid;
-        }
-    },
-
-    /**
-     * @private
-     * Handle changes in the form's validity. If there are any sub components with
-     * formBind=true then they are enabled/disabled based on the new validity.
-     * @param {Boolean} valid
-     */
-    onValidityChange: function(valid) {
-        var boundItems = this.getBoundItems(),
-            items, i, iLen, cmp;
-
-        if (boundItems) {
-            items = boundItems.items;
-            iLen  = items.length;
-
-            for (i = 0; i < iLen; i++) {
-                cmp = items[i];
-
-                if (cmp.disabled === valid) {
-                    cmp.setDisabled(!valid);
-                }
-            }
-        }
-    },
-
-    /**
-     * Returns true if any fields in this form have changed from their original values.
-     *
-     * Note that if this BasicForm was configured with {@link #trackResetOnLoad} then the
-     * Fields' *original values* are updated when the values are loaded by {@link #setValues}
-     * or {@link #loadRecord}.
-     *
-     * @return Boolean
-     */
-    isDirty: function() {
-        return !!this.getFields().findBy(function(f) {
-            return f.isDirty();
-        });
-    },
-
-    /**
-     * Check whether the dirty state of the entire form has changed since it was last checked, and
-     * if so fire the {@link #dirtychange dirtychange} event. This is automatically invoked
-     * when an individual field's dirty state changes.
-     */
-    checkDirty: function() {
-        var dirty = this.isDirty();
-        if (dirty !== this.wasDirty) {
-            this.fireEvent('dirtychange', this, dirty);
-            this.wasDirty = dirty;
-        }
-    },
-
-    /**
-     * Returns true if the form contains a file upload field. This is used to determine the method for submitting the
-     * form: File uploads are not performed using normal 'Ajax' techniques, that is they are **not** performed using
-     * XMLHttpRequests. Instead a hidden `<form>` element containing all the fields is created temporarily and submitted
-     * with its [target][1] set to refer to a dynamically generated, hidden `<iframe>` which is inserted into the document
-     * but removed after the return data has been gathered.
-     *
-     * The server response is parsed by the browser to create the document for the IFRAME. If the server is using JSON
-     * to send the return object, then the [Content-Type][2] header must be set to "text/html" in order to tell the
-     * browser to insert the text unchanged into the document body.
-     *
-     * Characters which are significant to an HTML parser must be sent as HTML entities, so encode `"<"` as `"&lt;"`,
-     * `"&"` as `"&amp;"` etc.
-     *
-     * The response text is retrieved from the document, and a fake XMLHttpRequest object is created containing a
-     * responseText property in order to conform to the requirements of event handlers and callbacks.
-     *
-     * Be aware that file upload packets are sent with the content type [multipart/form][3] and some server technologies
-     * (notably JEE) may require some custom processing in order to retrieve parameter names and parameter values from
-     * the packet content.
-     *
-     * [1]: http://www.w3.org/TR/REC-html40/present/frames.html#adef-target
-     * [2]: http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.17
-     * [3]: http://www.faqs.org/rfcs/rfc2388.html
-     *
-     * @return Boolean
-     */
-    hasUpload: function() {
-        return !!this.getFields().findBy(function(f) {
-            return f.isFileUpload();
-        });
-    },
-
-    /**
-     * Performs a predefined action (an implementation of {@link Ext.form.action.Action}) to perform application-
-     * specific processing.
-     *
-     * @param {String/Ext.form.action.Action} action The name of the predefined action type, or instance of {@link
-     * Ext.form.action.Action} to perform.
-     *
-     * @param {Object} [options] The options to pass to the {@link Ext.form.action.Action} that will get created,
-     * if the action argument is a String.
-     *
-     * All of the config options listed below are supported by both the {@link Ext.form.action.Submit submit} and
-     * {@link Ext.form.action.Load load} actions unless otherwise noted (custom actions could also accept other
-     * config options):
-     *
-     * @param {String} options.url
-     * The url for the action (defaults to the form's {@link #url}.)
-     *
-     * @param {String} options.method
-     * The form method to use (defaults to the form's method, or POST if not defined)
-     *
-     * @param {String/Object} options.params
-     * The params to pass (defaults to the form's baseParams, or none if not defined)
-     *
-     * Parameters are encoded as standard HTTP parameters using {@link Ext#urlEncode Ext.Object.toQueryString}.
-     *
-     * @param {Object} options.headers
-     * Request headers to set for the action.
-     *
-     * @param {Function} options.success
-     * The callback that will be invoked after a successful response (see top of {@link Ext.form.action.Submit submit}
-     * and {@link Ext.form.action.Load load} for a description of what constitutes a successful response).
-     * @param {Ext.form.Basic} options.success.form The form that requested the action.
-     * @param {Ext.form.action.Action} options.success.action The Action object which performed the operation.
-     * The action object contains these properties of interest:
-     *
-     *  - {@link Ext.form.action.Action#response response}
-     *  - {@link Ext.form.action.Action#result result} - interrogate for custom postprocessing
-     *  - {@link Ext.form.action.Action#type type}
-     *
-     * @param {Function} options.failure
-     * The callback that will be invoked after a failed transaction attempt.
-     * @param {Ext.form.Basic} options.failure.form The form that requested the action.
-     * @param {Ext.form.action.Action} options.failure.action The Action object which performed the operation.
-     * The action object contains these properties of interest:
-     *
-     * - {@link Ext.form.action.Action#failureType failureType}
-     * - {@link Ext.form.action.Action#response response}
-     * - {@link Ext.form.action.Action#result result} - interrogate for custom postprocessing
-     * - {@link Ext.form.action.Action#type type}
-     *
-     * @param {Object} options.scope
-     * The scope in which to call the callback functions (The this reference for the callback functions).
-     *
-     * @param {Boolean} options.clientValidation
-     * Submit Action only. Determines whether a Form's fields are validated in a final call to {@link
-     * Ext.form.Basic#isValid isValid} prior to submission. Set to false to prevent this. If undefined, pre-submission
-     * field validation is performed.
-     *
-     * @return {Ext.form.Basic} this
-     */
-    doAction: function(action, options) {
-        if (Ext.isString(action)) {
-            action = Ext.ClassManager.instantiateByAlias('formaction.' + action, Ext.apply({}, options, {form: this}));
-        }
-        if (this.fireEvent('beforeaction', this, action) !== false) {
-            this.beforeAction(action);
-            Ext.defer(action.run, 100, action);
-        }
-        return this;
-    },
-
-    /**
-     * Shortcut to {@link #doAction do} a {@link Ext.form.action.Submit submit action}. This will use the
-     * {@link Ext.form.action.Submit AJAX submit action} by default. If the {@link #standardSubmit} config
-     * is enabled it will use a standard form element to submit, or if the {@link #api} config is present
-     * it will use the {@link Ext.form.action.DirectLoad Ext.direct.Direct submit action}.
-     *
-     * The following code:
-     *
-     *     myFormPanel.getForm().submit({
-     *         clientValidation: true,
-     *         url: 'updateConsignment.php',
-     *         params: {
-     *             newStatus: 'delivered'
-     *         },
-     *         success: function(form, action) {
-     *            Ext.Msg.alert('Success', action.result.msg);
-     *         },
-     *         failure: function(form, action) {
-     *             switch (action.failureType) {
-     *                 case Ext.form.action.Action.CLIENT_INVALID:
-     *                     Ext.Msg.alert('Failure', 'Form fields may not be submitted with invalid values');
-     *                     break;
-     *                 case Ext.form.action.Action.CONNECT_FAILURE:
-     *                     Ext.Msg.alert('Failure', 'Ajax communication failed');
-     *                     break;
-     *                 case Ext.form.action.Action.SERVER_INVALID:
-     *                    Ext.Msg.alert('Failure', action.result.msg);
-     *            }
-     *         }
-     *     });
-     *
-     * would process the following server response for a successful submission:
-     *
-     *     {
-     *         "success":true, // note this is Boolean, not string
-     *         "msg":"Consignment updated"
-     *     }
-     *
-     * and the following server response for a failed submission:
-     *
-     *     {
-     *         "success":false, // note this is Boolean, not string
-     *         "msg":"You do not have permission to perform this operation"
-     *     }
-     *
-     * @param {Object} options The options to pass to the action (see {@link #doAction} for details).
-     * @return {Ext.form.Basic} this
-     */
-    submit: function(options) {
-        options = options || {};
-        var me = this,
-            action;
-            
-        if (options.standardSubmit || me.standardSubmit) {
-            action = 'standardsubmit';
-        } else {
-            action = me.api ? 'directsubmit' : 'submit';
-        }
-            
-        return me.doAction(action, options);
-    },
-
-    /**
-     * Shortcut to {@link #doAction do} a {@link Ext.form.action.Load load action}.
-     * @param {Object} options The options to pass to the action (see {@link #doAction} for details)
-     * @return {Ext.form.Basic} this
-     */
-    load: function(options) {
-        return this.doAction(this.api ? 'directload' : 'load', options);
-    },
-
-    /**
-     * Persists the values in this form into the passed {@link Ext.data.Model} object in a beginEdit/endEdit block.
-     * If the record is not specified, it will attempt to update (if it exists) the record provided to loadRecord.
-     * @param {Ext.data.Model} [record] The record to edit
-     * @return {Ext.form.Basic} this
-     */
-    updateRecord: function(record) {
-        record = record || this._record;
-        if (!record) {
-            Ext.Error.raise("A record is required.");
-        }
-        var fields = record.fields.items,
-            values = this.getFieldValues(),
-            obj = {},
-            i = 0,
-            len = fields.length,
-            name;
-
-        for (; i < len; ++i) {
-            name  = fields[i].name;
-
-            if (values.hasOwnProperty(name)) {
-                obj[name] = values[name];
-            }
-        }
-
-        record.beginEdit();
-        record.set(obj);
-        record.endEdit();
-
-        return this;
-    },
-
-    /**
-     * Loads an {@link Ext.data.Model} into this form by calling {@link #setValues} with the
-     * {@link Ext.data.Model#raw record data}.
-     * See also {@link #trackResetOnLoad}.
-     * @param {Ext.data.Model} record The record to load
-     * @return {Ext.form.Basic} this
-     */
-    loadRecord: function(record) {
-        this._record = record;
-        return this.setValues(record.data);
-    },
-
-    /**
-     * Returns the last Ext.data.Model instance that was loaded via {@link #loadRecord}
-     * @return {Ext.data.Model} The record
-     */
-    getRecord: function() {
-        return this._record;
-    },
-
-    /**
-     * @private
-     * Called before an action is performed via {@link #doAction}.
-     * @param {Ext.form.action.Action} action The Action instance that was invoked
-     */
-    beforeAction: function(action) {
-        var waitMsg = action.waitMsg,
-            maskCls = Ext.baseCSSPrefix + 'mask-loading',
-            fields  = this.getFields().items,
-            f,
-            fLen    = fields.length,
-            field, waitMsgTarget;
-
-        // Call HtmlEditor's syncValue before actions
-        for (f = 0; f < fLen; f++) {
-            field = fields[f];
-
-            if (field.isFormField && field.syncValue) {
-                field.syncValue();
-            }
-        }
-
-        if (waitMsg) {
-            waitMsgTarget = this.waitMsgTarget;
-            if (waitMsgTarget === true) {
-                this.owner.el.mask(waitMsg, maskCls);
-            } else if (waitMsgTarget) {
-                waitMsgTarget = this.waitMsgTarget = Ext.get(waitMsgTarget);
-                waitMsgTarget.mask(waitMsg, maskCls);
-            } else {
-                Ext.MessageBox.wait(waitMsg, action.waitTitle || this.waitTitle);
-            }
-        }
-    },
-
-    /**
-     * @private
-     * Called after an action is performed via {@link #doAction}.
-     * @param {Ext.form.action.Action} action The Action instance that was invoked
-     * @param {Boolean} success True if the action completed successfully, false, otherwise.
-     */
-    afterAction: function(action, success) {
-        if (action.waitMsg) {
-            var messageBox = Ext.MessageBox,
-                waitMsgTarget = this.waitMsgTarget;
-            if (waitMsgTarget === true) {
-                this.owner.el.unmask();
-            } else if (waitMsgTarget) {
-                waitMsgTarget.unmask();
-            } else {
-                // Do not fire the hide event because that triggers complex processing
-                // which is not necessary just for the wait window, and which may interfere with the app.
-                messageBox.suspendEvents();
-                messageBox.hide();
-                messageBox.resumeEvents();
-            }
-        }
-        if (success) {
-            if (action.reset) {
-                this.reset();
-            }
-            Ext.callback(action.success, action.scope || action, [this, action]);
-            this.fireEvent('actioncomplete', this, action);
-        } else {
-            Ext.callback(action.failure, action.scope || action, [this, action]);
-            this.fireEvent('actionfailed', this, action);
-        }
-    },
-
-
-    /**
-     * Find a specific {@link Ext.form.field.Field} in this form by id or name.
-     * @param {String} id The value to search for (specify either a {@link Ext.Component#id id} or
-     * {@link Ext.form.field.Field#getName name or hiddenName}).
-     * @return {Ext.form.field.Field} The first matching field, or `null` if none was found.
-     */
-    findField: function(id) {
-        return this.getFields().findBy(function(f) {
-            return f.id === id || f.getName() === id;
-        });
-    },
-
-
-    /**
-     * Mark fields in this form invalid in bulk.
-     * @param {Object/Object[]/Ext.data.Errors} errors
-     * Either an array in the form `[{id:'fieldId', msg:'The message'}, ...]`,
-     * an object hash of `{id: msg, id2: msg2}`, or a {@link Ext.data.Errors} object.
-     * @return {Ext.form.Basic} this
-     */
-    markInvalid: function(errors) {
-        var me = this,
-            e, eLen, error, value,
-            key;
-
-        function mark(fieldId, msg) {
-            var field = me.findField(fieldId);
-            if (field) {
-                field.markInvalid(msg);
-            }
-        }
-
-        if (Ext.isArray(errors)) {
-            eLen = errors.length;
-
-            for (e = 0; e < eLen; e++) {
-                error = errors[e];
-                mark(error.id, error.msg);
-            }
-        } else if (errors instanceof Ext.data.Errors) {
-            eLen  = errors.items.length;
-            for (e = 0; e < eLen; e++) {
-                error = errors.items[e];
-
-                mark(error.field, error.message);
-            }
-        } else {
-            for (key in errors) {
-                if (errors.hasOwnProperty(key)) {
-                    value = errors[key];
-                    mark(key, value, errors);
-                }
-            }
-        }
-        return this;
-    },
-
-    /**
-     * Set values for fields in this form in bulk.
-     *
-     * @param {Object/Object[]} values Either an array in the form:
-     *
-     *     [{id:'clientName', value:'Fred. Olsen Lines'},
-     *      {id:'portOfLoading', value:'FXT'},
-     *      {id:'portOfDischarge', value:'OSL'} ]
-     *
-     * or an object hash of the form:
-     *
-     *     {
-     *         clientName: 'Fred. Olsen Lines',
-     *         portOfLoading: 'FXT',
-     *         portOfDischarge: 'OSL'
-     *     }
-     *
-     * @return {Ext.form.Basic} this
-     */
-    setValues: function(values) {
-        var me = this,
-            v, vLen, val, field;
-
-        function setVal(fieldId, val) {
-            var field = me.findField(fieldId);
-            if (field) {
-                field.setValue(val);
-                if (me.trackResetOnLoad) {
-                    field.resetOriginalValue();
-                }
-            }
-        }
-
-        if (Ext.isArray(values)) {
-            // array of objects
-            vLen = values.length;
-
-            for (v = 0; v < vLen; v++) {
-                val = values[v];
-
-                setVal(val.id, val.value);
-            }
-        } else {
-            // object hash
-            Ext.iterate(values, setVal);
-        }
-        return this;
-    },
-
-    /**
-     * Retrieves the fields in the form as a set of key/value pairs, using their
-     * {@link Ext.form.field.Field#getSubmitData getSubmitData()} method to collect the values.
-     * If multiple fields return values under the same name those values will be combined into an Array.
-     * This is similar to {@link Ext.form.Basic#getFieldValues getFieldValues} except that this method
-     * collects only String values for submission, while getFieldValues collects type-specific data
-     * values (e.g. Date objects for date fields.)
-     *
-     * @param {Boolean} [asString=false] If true, will return the key/value collection as a single
-     * URL-encoded param string.
-     * @param {Boolean} [dirtyOnly=false] If true, only fields that are dirty will be included in the result.
-     * @param {Boolean} [includeEmptyText=false] If true, the configured emptyText of empty fields will be used.
-     * @param {Boolean} [useDataValues=false] If true, the {@link Ext.form.field.Field#getModelData getModelData}
-     * method is used to retrieve values from fields, otherwise the {@link Ext.form.field.Field#getSubmitData getSubmitData}
-     * method is used.
-     * @return {String/Object}
-     */
-    getValues: function(asString, dirtyOnly, includeEmptyText, useDataValues) {
-        var values  = {},
-            fields  = this.getFields().items,
-            f,
-            fLen    = fields.length,
-            isArray = Ext.isArray,
-            field, data, val, bucket, name;
-
-        for (f = 0; f < fLen; f++) {
-            field = fields[f];
-
-            if (!dirtyOnly || field.isDirty()) {
-                data = field[useDataValues ? 'getModelData' : 'getSubmitData'](includeEmptyText);
-
-                if (Ext.isObject(data)) {
-                    for (name in data) {
-                        if (data.hasOwnProperty(name)) {
-                            val = data[name];
-
-                            if (includeEmptyText && val === '') {
-                                val = field.emptyText || '';
-                            }
-
-                            if (values.hasOwnProperty(name)) {
-                                bucket = values[name];
-
-                                if (!isArray(bucket)) {
-                                    bucket = values[name] = [bucket];
-                                }
-
-                                if (isArray(val)) {
-                                    values[name] = values[name] = bucket.concat(val);
-                                } else {
-                                    bucket.push(val);
-                                }
-                            } else {
-                                values[name] = val;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if (asString) {
-            values = Ext.Object.toQueryString(values);
-        }
-        return values;
-    },
-
-    /**
-     * Retrieves the fields in the form as a set of key/value pairs, using their
-     * {@link Ext.form.field.Field#getModelData getModelData()} method to collect the values.
-     * If multiple fields return values under the same name those values will be combined into an Array.
-     * This is similar to {@link #getValues} except that this method collects type-specific data values
-     * (e.g. Date objects for date fields) while getValues returns only String values for submission.
-     *
-     * @param {Boolean} [dirtyOnly=false] If true, only fields that are dirty will be included in the result.
-     * @return {Object}
-     */
-    getFieldValues: function(dirtyOnly) {
-        return this.getValues(false, dirtyOnly, false, true);
-    },
-
-    /**
-     * Clears all invalid field messages in this form.
-     * @return {Ext.form.Basic} this
-     */
-    clearInvalid: function() {
-        Ext.suspendLayouts();
-
-        var me     = this,
-            fields = me.getFields().items,
-            f,
-            fLen   = fields.length;
-
-        for (f = 0; f < fLen; f++) {
-            fields[f].clearInvalid();
-        }
-
-        Ext.resumeLayouts(true);
-        return me;
-    },
-
-    /**
-     * Resets all fields in this form.
-     * @return {Ext.form.Basic} this
-     */
-    reset: function() {
-        Ext.suspendLayouts();
-
-        var me     = this,
-            fields = me.getFields().items,
-            f,
-            fLen   = fields.length;
-
-        for (f = 0; f < fLen; f++) {
-            fields[f].reset();
-        }
-
-        Ext.resumeLayouts(true);
-        return me;
-    },
-
-    /**
-     * Calls {@link Ext#apply Ext.apply} for all fields in this form with the passed object.
-     * @param {Object} obj The object to be applied
-     * @return {Ext.form.Basic} this
-     */
-    applyToFields: function(obj) {
-        var fields = this.getFields().items,
-            f,
-            fLen   = fields.length;
-
-        for (f = 0; f < fLen; f++) {
-            Ext.apply(fields[f], obj);
-        }
-
-        return this;
-    },
-
-    /**
-     * Calls {@link Ext#applyIf Ext.applyIf} for all field in this form with the passed object.
-     * @param {Object} obj The object to be applied
-     * @return {Ext.form.Basic} this
-     */
-    applyIfToFields: function(obj) {
-        var fields = this.getFields().items,
-            f,
-            fLen   = fields.length;
-
-        for (f = 0; f < fLen; f++) {
-            Ext.applyIf(fields[f], obj);
-        }
-
-        return this;
-    }
-});
-
-/**
- * @docauthor Jason Johnston <jason@sencha.com>
- * 
- * FormPanel provides a standard container for forms. It is essentially a standard {@link Ext.panel.Panel} which
- * automatically creates a {@link Ext.form.Basic BasicForm} for managing any {@link Ext.form.field.Field}
- * objects that are added as descendants of the panel. It also includes conveniences for configuring and
- * working with the BasicForm and the collection of Fields.
- * 
- * # Layout
- * 
- * By default, FormPanel is configured with `{@link Ext.layout.container.Anchor layout:'anchor'}` for
- * the layout of its immediate child items. This can be changed to any of the supported container layouts.
- * The layout of sub-containers is configured in {@link Ext.container.Container#layout the standard way}.
- * 
- * # BasicForm
- * 
- * Although **not listed** as configuration options of FormPanel, the FormPanel class accepts all
- * of the config options supported by the {@link Ext.form.Basic} class, and will pass them along to
- * the internal BasicForm when it is created.
- * 
- * The following events fired by the BasicForm will be re-fired by the FormPanel and can therefore be
- * listened for on the FormPanel itself:
- * 
- * - {@link Ext.form.Basic#beforeaction beforeaction}
- * - {@link Ext.form.Basic#actionfailed actionfailed}
- * - {@link Ext.form.Basic#actioncomplete actioncomplete}
- * - {@link Ext.form.Basic#validitychange validitychange}
- * - {@link Ext.form.Basic#dirtychange dirtychange}
- * 
- * # Field Defaults
- * 
- * The {@link #fieldDefaults} config option conveniently allows centralized configuration of default values
- * for all fields added as descendants of the FormPanel. Any config option recognized by implementations
- * of {@link Ext.form.Labelable} may be included in this object. See the {@link #fieldDefaults} documentation
- * for details of how the defaults are applied.
- * 
- * # Form Validation
- * 
- * With the default configuration, form fields are validated on-the-fly while the user edits their values.
- * This can be controlled on a per-field basis (or via the {@link #fieldDefaults} config) with the field
- * config properties {@link Ext.form.field.Field#validateOnChange} and {@link Ext.form.field.Base#checkChangeEvents},
- * and the FormPanel's config properties {@link #pollForChanges} and {@link #pollInterval}.
- * 
- * Any component within the FormPanel can be configured with `formBind: true`. This will cause that
- * component to be automatically disabled when the form is invalid, and enabled when it is valid. This is most
- * commonly used for Button components to prevent submitting the form in an invalid state, but can be used on
- * any component type.
- * 
- * For more information on form validation see the following:
- * 
- * - {@link Ext.form.field.Field#validateOnChange}
- * - {@link #pollForChanges} and {@link #pollInterval}
- * - {@link Ext.form.field.VTypes}
- * - {@link Ext.form.Basic#doAction BasicForm.doAction clientValidation notes}
- * 
- * # Form Submission
- * 
- * By default, Ext Forms are submitted through Ajax, using {@link Ext.form.action.Action}. See the documentation for
- * {@link Ext.form.Basic} for details.
- *
- * # Example usage
- * 
- *     @example
- *     Ext.create('Ext.form.Panel', {
- *         title: 'Simple Form',
- *         bodyPadding: 5,
- *         width: 350,
- * 
- *         // The form will submit an AJAX request to this URL when submitted
- *         url: 'save-form.php',
- * 
- *         // Fields will be arranged vertically, stretched to full width
- *         layout: 'anchor',
- *         defaults: {
- *             anchor: '100%'
- *         },
- * 
- *         // The fields
- *         defaultType: 'textfield',
- *         items: [{
- *             fieldLabel: 'First Name',
- *             name: 'first',
- *             allowBlank: false
- *         },{
- *             fieldLabel: 'Last Name',
- *             name: 'last',
- *             allowBlank: false
- *         }],
- * 
- *         // Reset and Submit buttons
- *         buttons: [{
- *             text: 'Reset',
- *             handler: function() {
- *                 this.up('form').getForm().reset();
- *             }
- *         }, {
- *             text: 'Submit',
- *             formBind: true, //only enabled once the form is valid
- *             disabled: true,
- *             handler: function() {
- *                 var form = this.up('form').getForm();
- *                 if (form.isValid()) {
- *                     form.submit({
- *                         success: function(form, action) {
- *                            Ext.Msg.alert('Success', action.result.msg);
- *                         },
- *                         failure: function(form, action) {
- *                             Ext.Msg.alert('Failed', action.result.msg);
- *                         }
- *                     });
- *                 }
- *             }
- *         }],
- *         renderTo: Ext.getBody()
- *     });
- *
- */
-Ext.define('Ext.form.Panel', {
-    extend:'Ext.panel.Panel',
-    mixins: {
-        fieldAncestor: 'Ext.form.FieldAncestor'
-    },
-    alias: 'widget.form',
-    alternateClassName: ['Ext.FormPanel', 'Ext.form.FormPanel'],
-    requires: ['Ext.form.Basic', 'Ext.util.TaskRunner'],
-
-    /**
-     * @cfg {Boolean} pollForChanges
-     * If set to `true`, sets up an interval task (using the {@link #pollInterval}) in which the
-     * panel's fields are repeatedly checked for changes in their values. This is in addition to the normal detection
-     * each field does on its own input element, and is not needed in most cases. It does, however, provide a
-     * means to absolutely guarantee detection of all changes including some edge cases in some browsers which
-     * do not fire native events. Defaults to `false`.
-     */
-
-    /**
-     * @cfg {Number} pollInterval
-     * Interval in milliseconds at which the form's fields are checked for value changes. Only used if
-     * the {@link #pollForChanges} option is set to `true`. Defaults to 500 milliseconds.
-     */
-
-    /**
-     * @cfg {String} layout
-     * The {@link Ext.container.Container#layout} for the form panel's immediate child items.
-     * Defaults to `'anchor'`.
-     */
-    layout: 'anchor',
-
-    ariaRole: 'form',
-    
-    basicFormConfigs: [
-        'api', 
-        'baseParams', 
-        'errorReader', 
-        'method', 
-        'paramOrder',
-        'paramsAsHash',
-        'reader',
-        'standardSubmit',
-        'timeout',
-        'trackResetOnLoad',
-        'url',
-        'waitMsgTarget',
-        'waitTitle'
-    ],
-
-    initComponent: function() {
-        var me = this;
-
-        if (me.frame) {
-            me.border = false;
-        }
-
-        me.initFieldAncestor();
-        me.callParent();
-
-        me.relayEvents(me.form, [
-            /**
-             * @event beforeaction
-             * @inheritdoc Ext.form.Basic#beforeaction
-             */
-            'beforeaction',
-            /**
-             * @event actionfailed
-             * @inheritdoc Ext.form.Basic#actionfailed
-             */
-            'actionfailed',
-            /**
-             * @event actioncomplete
-             * @inheritdoc Ext.form.Basic#actioncomplete
-             */
-            'actioncomplete',
-            /**
-             * @event validitychange
-             * @inheritdoc Ext.form.Basic#validitychange
-             */
-            'validitychange',
-            /**
-             * @event dirtychange
-             * @inheritdoc Ext.form.Basic#dirtychange
-             */
-            'dirtychange'
-        ]);
-
-        // Start polling if configured
-        if (me.pollForChanges) {
-            me.startPolling(me.pollInterval || 500);
-        }
-    },
-
-    initItems: function() {
-        // Create the BasicForm
-        var me = this;
-
-        me.form = me.createForm();
-        me.callParent();
-    },
-
-    // Initialize the BasicForm after all layouts have been completed.
-    afterFirstLayout: function() {
-        this.callParent();
-        this.form.initialize();
-    },
-
-    /**
-     * @private
-     */
-    createForm: function() {
-        var cfg = {},
-            props = this.basicFormConfigs,
-            len = props.length,
-            i = 0,
-            prop;
-            
-        for (; i < len; ++i) {
-            prop = props[i];
-            cfg[prop] = this[prop];
-        }
-        return new Ext.form.Basic(this, cfg);
-    },
-
-    /**
-     * Provides access to the {@link Ext.form.Basic Form} which this Panel contains.
-     * @return {Ext.form.Basic} The {@link Ext.form.Basic Form} which this Panel contains.
-     */
-    getForm: function() {
-        return this.form;
-    },
-
-    /**
-     * Loads an {@link Ext.data.Model} into this form (internally just calls {@link Ext.form.Basic#loadRecord})
-     * See also {@link Ext.form.Basic#trackResetOnLoad trackResetOnLoad}.
-     * @param {Ext.data.Model} record The record to load
-     * @return {Ext.form.Basic} The Ext.form.Basic attached to this FormPanel
-     */
-    loadRecord: function(record) {
-        return this.getForm().loadRecord(record);
-    },
-
-    /**
-     * Returns the currently loaded Ext.data.Model instance if one was loaded via {@link #loadRecord}.
-     * @return {Ext.data.Model} The loaded instance
-     */
-    getRecord: function() {
-        return this.getForm().getRecord();
-    },
-
-    /**
-     * Convenience function for fetching the current value of each field in the form. This is the same as calling
-     * {@link Ext.form.Basic#getValues this.getForm().getValues()}.
-     *
-     * @inheritdoc Ext.form.Basic#getValues
-     */
-    getValues: function(asString, dirtyOnly, includeEmptyText, useDataValues) {
-        return this.getForm().getValues(asString, dirtyOnly, includeEmptyText, useDataValues);
-    },
-
-    beforeDestroy: function() {
-        this.stopPolling();
-        this.form.destroy();
-        this.callParent();
-    },
-
-    /**
-     * This is a proxy for the underlying BasicForm's {@link Ext.form.Basic#load} call.
-     * @param {Object} options The options to pass to the action (see {@link Ext.form.Basic#load} and
-     * {@link Ext.form.Basic#doAction} for details)
-     */
-    load: function(options) {
-        this.form.load(options);
-    },
-
-    /**
-     * This is a proxy for the underlying BasicForm's {@link Ext.form.Basic#submit} call.
-     * @param {Object} options The options to pass to the action (see {@link Ext.form.Basic#submit} and
-     * {@link Ext.form.Basic#doAction} for details)
-     */
-    submit: function(options) {
-        this.form.submit(options);
-    },
-
-    /**
-     * Start an interval task to continuously poll all the fields in the form for changes in their
-     * values. This is normally started automatically by setting the {@link #pollForChanges} config.
-     * @param {Number} interval The interval in milliseconds at which the check should run.
-     */
-    startPolling: function(interval) {
-        this.stopPolling();
-        var task = new Ext.util.TaskRunner(interval);
-        task.start({
-            interval: 0,
-            run: this.checkChange,
-            scope: this
-        });
-        this.pollTask = task;
-    },
-
-    /**
-     * Stop a running interval task that was started by {@link #startPolling}.
-     */
-    stopPolling: function() {
-        var task = this.pollTask;
-        if (task) {
-            task.stopAll();
-            delete this.pollTask;
-        }
-    },
-
-    /**
-     * Forces each field within the form panel to
-     * {@link Ext.form.field.Field#checkChange check if its value has changed}.
-     */
-    checkChange: function() {
-        var fields = this.form.getFields().items,
-            f,
-            fLen   = fields.length,
-            field;
-
-        for (f = 0; f < fLen; f++) {
-            fields[f].checkChange();
-        }
-    }
 });
 

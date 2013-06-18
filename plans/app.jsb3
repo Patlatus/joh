@@ -1005,6 +1005,36 @@
                     "path": "desktop/js/"
                 },
                 {
+                    "clsName": "Ext.form.FieldAncestor",
+                    "name": "FieldAncestor.js",
+                    "path": "src/form/"
+                },
+                {
+                    "clsName": "Ext.form.Action.Action",
+                    "name": "Action.js",
+                    "path": "src/form/action/"
+                },
+                {
+                    "clsName": "Ext.form.Action.Load",
+                    "name": "Load.js",
+                    "path": "src/form/action/"
+                },
+                {
+                    "clsName": "Ext.form.Action.Submit",
+                    "name": "Submit.js",
+                    "path": "src/form/action/"
+                },
+                {
+                    "clsName": "Ext.form.Basic",
+                    "name": "Basic.js",
+                    "path": "src/form/"
+                },
+                {
+                    "clsName": "Ext.form.Panel",
+                    "name": "Panel.js",
+                    "path": "src/form/"
+                },
+                {
                     "clsName": "MyDesktop.App",
                     "name": "App.js",
                     "path": "desktop/"
@@ -1413,36 +1443,6 @@
                     "clsName": "Ext.grid.Lockable",
                     "name": "Lockable.js",
                     "path": "src/grid/"
-                },
-                {
-                    "clsName": "Ext.form.FieldAncestor",
-                    "name": "FieldAncestor.js",
-                    "path": "src/form/"
-                },
-                {
-                    "clsName": "Ext.form.Action.Action",
-                    "name": "Action.js",
-                    "path": "src/form/action/"
-                },
-                {
-                    "clsName": "Ext.form.Action.Load",
-                    "name": "Load.js",
-                    "path": "src/form/action/"
-                },
-                {
-                    "clsName": "Ext.form.Action.Submit",
-                    "name": "Submit.js",
-                    "path": "src/form/action/"
-                },
-                {
-                    "clsName": "Ext.form.Basic",
-                    "name": "Basic.js",
-                    "path": "src/form/"
-                },
-                {
-                    "clsName": "Ext.form.Panel",
-                    "name": "Panel.js",
-                    "path": "src/form/"
                 }
             ]
         },
