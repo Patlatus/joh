@@ -27,6 +27,10 @@ catch(Exception $e)
   
 $hashtag = $_POST["hashtag"];
 if ($hashtag=="" || $hashtag==null) {
+    $hashtag = $_GET["hashtag"];
+	$log->lwrite('Empty POST, trying to get GET, $hashtag= '.$hashtag);
+}
+if ($hashtag=="" || $hashtag==null) {
         echo 'Empty hashtag, cannot execute query';
         $log->lwrite('Empty hashtag, cannot execute query');
         return;
@@ -39,7 +43,7 @@ if (!$con)
 
 mysql_select_db($dbname, $con);
 
-$sql="SELECT * FROM stickers WHERE hashtag = '".$hashtag."'";
+$sql="SELECT * FROM ".$plans." WHERE hashtag = '".$hashtag."'";
 $log->lwrite("hashtag=".$hashtag."\nsql=".$sql);
 $result = mysql_query($sql);
 $log->lwrite($result);

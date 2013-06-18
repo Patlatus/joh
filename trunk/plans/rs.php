@@ -42,7 +42,7 @@ try
       }
 
     mysql_select_db($dbname, $con);
-    $removesql="delete from stickers where id = '".$id."'";
+    $removesql="delete from ".$plans." where id = '".$id."'";
     $log->lwrite("id=".$id."\nsql=".$removesql);
     $result = mysql_query($removesql);
 

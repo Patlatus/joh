@@ -11,10 +11,7 @@ Ext.define('MyDesktop.App', {
         'MyDesktop.Notepad',
         'MyDesktop.Settings'],
     getModules : function(){
-        return [/*new MyDesktop.MatchesWindow(),
-            new MyDesktop.AboutTextWindow(),
-            new MyDesktop.VideoWindow(),
-            new MyDesktop.SystemStatus(),*/
+        return [
             new MyDesktop.Notepad()];
     },
     
@@ -31,11 +28,7 @@ Ext.define('MyDesktop.App', {
                 ],
                 shortcuts:Ext.create('Ext.data.Store',{
                     model:'Ext.ux.desktop.ShortcutModel',
-                    data: [/*{ name:'Matches Game',iconCls:'matches-shortcut',module:'matches-win' },
-                        { name:'About text',iconCls:'abouttext-shortcut',module:'abouttext-win' },
-                        { name:'About video',iconCls:'video-shortcut',module:'video' },
-                        { name:'Notepad',iconCls:'notepad-shortcut',module:'notepad' },
-                        { name:'System Status',iconCls:'cpu-shortcut',module:'systemstatus'}*/]
+                    data: []
                 }),
                 wallpaper: 'wallpapers/isus-wallpaper.jpg',
                 wallpaperStretch:false
@@ -59,8 +52,7 @@ Ext.define('MyDesktop.App', {
                     },
                     '-',
                     {
-                        text:'Вийти',
-                        disabled:true,
+                        text:(window.logoutlabel || 'Вийти'),
                         iconCls:'logout',
                         handler:me.onLogout,
                         scope:me
@@ -73,16 +65,7 @@ Ext.define('MyDesktop.App', {
     getTaskbarConfig:function () {
         var ret = this.callParent();
         return Ext.apply(ret, {
-            quickStart:[/*{
-                name:'Matches Game',
-                iconCls:'icon-matches',
-                module:'matches-win'
-            },
-            {
-            name:'About video',
-            iconCls:'icon-video',
-            module:'video'}
-            */
+            quickStart:[
                 {
                     name:'Додати запис',
                     iconCls:'notepad',
@@ -114,7 +97,6 @@ Ext.define('MyDesktop.App', {
             
             
         var xStore = Ext.create('Ext.data.Store', {
-            //model: 'User',
             fields: [
                 {name: 'id', type: 'int'},
                 {name: 'text', type: 'string'},
@@ -127,12 +109,11 @@ Ext.define('MyDesktop.App', {
 
             
         });
-        //xStore.load();
-        
+
         Ext.Ajax.request({
             url: 'gn.php',
             params: {
-                hashtag: 0
+                hashtag: window.userid
             },
             success: Ext.bind(function(response){
                 var text = response.responseText;
@@ -159,42 +140,6 @@ Ext.define('MyDesktop.App', {
                         showEditButton      : true,
                         showRemoveButton    : true
                     });
-                        /*var ww = this.desktop.createWindow({
-                        id:data.id,
-                        title:data.title,
-                        x:data.x,
-                        y:data.y,
-                        iconCls:null,
-                        animCollapse:false,
-                        constrainHeader:true,
-                        layout:'fit',
-                        tools:[{
-                            type:'plus',
-                            tooltip: 'Редагувати',
-                            // hidden:true,
-                            scope:this,
-                            handler: function(event, toolEl, panel){
-                                alert(this.$className);
-                                this.getModule("notepad").edit(panel.ownerCt.id);// refresh logic
-                            }
-                        },
-                        {
-                            type:'minus',
-                            tooltip: 'Видалити',
-                            scope:this,
-                            handler: function(event, toolEl, panel){
-                                alert(this.$className);
-                                this.getModule("notepad").remove(panel.ownerCt.id);// show help here
-                            }
-                        }],
-                        items:{
-
-                            bodyStyle: 'background-color:yellow;',
-                            html:xStore.data.items[i].data.text,
-                            autoScroll:true
-                        }
-                    });
-                    ww.show();*/
                 }
             }, this)
         });
@@ -205,17 +150,15 @@ Ext.define('MyDesktop.App', {
             },
             success: Ext.bind(function(response){
                 var text = response.responseText;
-                try{
-                var decodedText = Ext.decode(text)
+                try {
+                    var decodedText = Ext.decode(text)
                 }
                 catch (e) {
                     alert('Error during decoding text:\n' + text);
                 }
-                this.write('text:\n'+text);
-                this.write('decodedText:\n'+decodedText);
+                this.write('text:\n' + text);
+                this.write('decodedText:\n' + decodedText);
                 xStore.loadData(decodedText);
-                //xStore.data = text;//Ext.data.reader.Reader.prototype.readRecords(text);
-                //xStore.data = xStore.proxy.reader.readRecords(text);
                
                 
                 for (var i = 0; i < xStore.data.items.length; i++) {
@@ -231,81 +174,9 @@ Ext.define('MyDesktop.App', {
                         showEditButton      : false,
                         showRemoveButton    : false
                     });
-                    /*var ww = this.desktop.createWindow({
-                        id:data.id,
-                        title:data.title,
-                        x:data.x,
-                        y:data.y,
-                        iconCls:null,
-                        animCollapse:false,
-                        constrainHeader:true,
-                        layout:'fit',
-                        tools:[{
-                            type:'plus',
-                            tooltip: 'Редагувати',
-                            // hidden:true,
-                            handler: function(event, toolEl, panel){
-                                // refresh logic
-                            }
-                        },
-                        {
-                            type:'minus',
-                            tooltip: 'Видалити',
-                            handler: function(event, toolEl, panel){
-                                // show help here
-                            }
-                        }],
-                        items:{
-
-                            bodyStyle: 'background-color:00ff00;',
-                            html:xStore.data.items[i].data.text,
-                            autoScroll:true
-                        }
-                    });
-                    ww.show();*/
                 }
             }, this)
         });
-        data = {
-            id    : 'usefullinks',
-            title : 'Корисні лінки',
-            x     : 0,
-            y     : 0,
-            text  : '<a href="http://www.liturgia.alfaomega.org.ua/index.php" target="_blank">Римокатолицьке Євангеліє на кожен день</a><br/>'+
-                '<a href="http://dyvensvit.org/bible-daily/' + x + '/" target="_blank">Грекокатолицьке Євангеліє на кожен день</a><br/>'+
-                '<a href="http://www.lopbible.narod.ru/index.htm" target="_blank">Тлумачна Біблія Лопухіна</a><br/>'+
-                '<a href="http://forum.ugcc.org.ua/" target="_blank" "="">Форум УГКЦ</a><br><a href="http://www.bibliya.in.ua/" target="_blank">Святе Письмо онлайн</a><br><a href="http://ecumenicalcalendar.org.ua/" target="_blank">Християнський Календар</a><br><a href="http://catechismus.org.ua/" target="_blank">Катехизм Католицької Церкви</a>'
-        };
-        this.getModule("notepad").showPanel(data, 'background-color:00ffc0;');
-		data = {
-            id    : 'mail',
-            title : 'Пошта',
-            x     : 257,
-            y     : 0,
-            text  : '<a href="http://freemail.ukr.net" target="_blank">ukr.net</a><br><a href="https://accounts.google.com" target="_blank">Gmail</a><br><a href="http://mail.yahoo.com" target="_blank">Yahoo</a><br><a href="http://www.i.ua/" target="_blank">i.ua</a><br><a href="http://mail.ru/" target="_blank">Mail.ru</a>'
-        };
-		this.getModule("notepad").showPanel(data, 'background-color:c0ff00;');
-		
-        /*var ww = this.desktop.createWindow({
-            id:'xxx',
-            title:'Корисні лінки',
-            x:0,
-            y:0,
-            iconCls:null,
-            animCollapse:false,
-            constrainHeader:true,
-            layout:'fit',
-            items:{
-
-                bodyStyle: 'background-color:yellow;',
-                html:'<a href="http://www.liturgia.alfaomega.org.ua/index.php" target="_blank">Римокатолицьке Євангеліє на кожен день</a><br/>'+
-                '<a href="http://dyvensvit.org/bible-daily/' + x + '/" target="_blank">Грекокатолицьке Євангеліє на кожен день</a><br/>'+
-                '<a href="http://www.lopbible.narod.ru/index.htm" target="_blank">Тлумачна Біблія Лопухіна</a>',
-                autoScroll:true
-            }
-        });
-        ww.show();*/
-
     },
     
     onSettings:function () {
@@ -313,5 +184,18 @@ Ext.define('MyDesktop.App', {
             desktop:this.desktop
         });
         dlg.show();
+    },
+    
+    onLogout : function () {
+        Ext.Ajax.request({
+            url: 'lo.php',
+            params: {
+                
+            },
+            success: Ext.bind(function(response){
+                myDesktopApp.shutdown();
+                loginForm.show();
+            })
+        });
     }
 });

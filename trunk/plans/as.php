@@ -49,7 +49,7 @@ try
     $hashtag = mysql_real_escape_string($hashtag);
     $text = mysql_real_escape_string($text);
     $title = mysql_real_escape_string($title);
-    $addsql="insert into stickers (hashtag, text, title, x, y) values ('".$hashtag."', '".$text."', '".$title."', ".$x.", ".$y.")";
+    $addsql="insert into ".$plans." (hashtag, text, title, x, y) values ('".$hashtag."', '".$text."', '".$title."', ".$x.", ".$y.")";
     $log->lwrite("hashtag=".$hashtag."text=".$text."\nsql=".$addsql);
     $result = mysql_query($addsql);
 

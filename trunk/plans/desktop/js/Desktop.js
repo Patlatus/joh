@@ -93,18 +93,14 @@ Ext.define('Ext.ux.desktop.Desktop', {
 
         me.items = [
             { xtype: 'wallpaper', id: me.id+'_wallpaper' },
-			me.createDataView()
+            me.createDataView()
         ];
-		
+        
         me.callParent();
 
         me.shortcutsView = me.items.getAt(1);
         me.shortcutsView.on('itemclick', me.onShortcutItemClick, me);
-		//cls: 'cursor-dragme',
-        /*draggable: {
-            constrain: true,
-            constrainTo: Ext.getBody()
-        },*/
+
 
         var wallpaper = me.wallpaper;
         me.wallpaper = me.items.getAt(0);
@@ -133,15 +129,11 @@ Ext.define('Ext.ux.desktop.Desktop', {
             style: {
                 position: 'absolute'
             },
-			width: 40,
-			height: 40,
-			/*cls: 'cursor-dragme',
-        draggable: {
-            //constrain: true,
-            constrainTo: Ext.getBody()
-        },*/
+            width: 40,
+            height: 40,
 
-				 x: 0, y: 0,
+
+                 x: 0, y: 0,
             tpl: new Ext.XTemplate(me.shortcutTpl)
         };
     },
@@ -446,5 +438,12 @@ Ext.define('Ext.ux.desktop.Desktop', {
         }
 
         me.taskbar.setActiveButton(activeWindow && activeWindow.taskButton);
+    },
+    
+    closeAllWindows : function () {
+        var me = this;
+        me.windows.each(function(win) {
+            win.doClose();
+        });
     }
 });

@@ -61,6 +61,19 @@ Ext.define('Ext.ux.desktop.App', {
         me.isReady = true;
         me.fireEvent('ready', me);
     },
+    
+    shutdown : function () {
+        var me = this;
+        me.desktop.closeAllWindows();
+        me.viewport.remove(me.desktop, true);
+    },
+    
+    reinit : function () {
+        var me = this;
+        me.desktop = new Ext.ux.desktop.Desktop(desktopCfg);
+
+        me.viewport.add(me.desktop);
+    },
 
     /**
      * This method returns the configuration object for the Desktop object. A derived
@@ -132,7 +145,7 @@ Ext.define('Ext.ux.desktop.App', {
     },
 
     getModule : function(name) {
-    	var ms = this.modules;
+        var ms = this.modules;
         for (var i = 0, len = ms.length; i < len; i++) {
             var m = ms[i];
             if (m.id == name || m.appType == name) {
