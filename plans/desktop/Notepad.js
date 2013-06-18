@@ -16,7 +16,7 @@ Ext.define('MyDesktop.Notepad', {
 
     init : function(){
         this.launcher = {
-            text: 'Додати запис',
+            text: window.addnote || 'Додати запис',
             iconCls:'notepad'
         }
     },
@@ -31,7 +31,7 @@ Ext.define('MyDesktop.Notepad', {
         if (!win){
             win = desktop.createWindow({
                 id: 'notepad',
-                title:'Додати новий запис',//'Add new note',
+                title:window.addnewnote || 'Додати новий запис',//'Add new note',
                 width:600,
                 height:400,
                 iconCls: 'notepad',
@@ -46,12 +46,11 @@ Ext.define('MyDesktop.Notepad', {
                 bbar: [
                     { 
                         xtype: 'button',
-                        text: 'Додати новий запис',
+                        text: window.addnewnote || 'Додати новий запис',
                         listeners: {
                             click: {
                                 scope: this,
                                 fn: function() {
-                                    //alert(Ext.getCmp('notepad-editor').getValue());
                                     var data = {
                                         title : this.ps(Ext.getCmp('title-editor').getValue()),
                                         x     : this.app.getDesktop().getWindow('notepad').x,
@@ -74,8 +73,7 @@ Ext.define('MyDesktop.Notepad', {
                                                 showDuplicateButton : false,
                                                 showEditButton      : true,
                                                 showRemoveButton    : true
-                                            });//var text = response.responseText;
-                                            //alert("addstick1.php success:\n"+text);
+                                            });
                                         }
                                     });
                                     this.app.getDesktop().getWindow('notepad').close();
@@ -98,7 +96,7 @@ Ext.define('MyDesktop.Notepad', {
                         },
                         items: [
                             {
-                                html: 'Заголовок:'
+                                html: window.titletext || 'Заголовок:'
                             },
                             {
                                 xtype: 'textfield',
@@ -126,7 +124,7 @@ Ext.define('MyDesktop.Notepad', {
         panelWin = desktop.getWindow(idn);
         win = desktop.createWindow({
             id: 'notepad',
-            title:'Редагувати запис',//'Add new note',
+            title:window.editnote || 'Редагувати запис',//'Add new note',
             width:600,
             height:400,
             x: panelWin.x,
@@ -143,7 +141,7 @@ Ext.define('MyDesktop.Notepad', {
             bbar: [
                 { 
                     xtype: 'button',
-                    text: 'Застосувати зміни',
+                    text: window.applychanges || 'Застосувати зміни',
                     listeners: {
                         click: {
                             scope: this,
@@ -194,7 +192,7 @@ Ext.define('MyDesktop.Notepad', {
                     },
                     items: [
                         {
-                            html: 'Заголовок:'
+                            html: window.titletext || 'Заголовок:'
                         },
                         {
                             xtype: 'textfield',
@@ -219,7 +217,7 @@ Ext.define('MyDesktop.Notepad', {
         panelWin = desktop.getWindow(idn);
         win = desktop.createWindow({
             id: 'notepad',
-            title:'Редагувати запис',//'Add new note',
+            title:window.editnote || 'Редагувати запис',//'Add new note',
             width:600,
             height:400,
             x: panelWin.x,
@@ -236,7 +234,7 @@ Ext.define('MyDesktop.Notepad', {
             bbar: [
                 { 
                     xtype: 'button',
-                    text: 'Застосувати зміни',
+                    text: window.applychanges || 'Застосувати зміни',
                     listeners: {
                         click: {
                             scope: this,
@@ -291,7 +289,7 @@ Ext.define('MyDesktop.Notepad', {
                     },
                     items: [
                         {
-                            html: 'Заголовок:'
+                            html: window.titletext || 'Заголовок:'
                         },
                         {
                             xtype: 'textfield',
@@ -312,7 +310,7 @@ Ext.define('MyDesktop.Notepad', {
     },
     
     remove : function (idn) {
-        Ext.Msg.confirm("Агов!", "Чи Ви справді бажаєте видалити цей милий і прекрасний запис? Цю дію не можна скасувати.", function(button) {
+        Ext.Msg.confirm(window.removenotetitle || "Агов!", window.removenotetext || "Чи Ви справді бажаєте видалити цей милий і прекрасний запис? Цю дію не можна скасувати.", function(button) {
             if (button === 'yes') {
                 Ext.Ajax.request({
                     url: 'rs.php',
@@ -338,7 +336,7 @@ Ext.define('MyDesktop.Notepad', {
             if (options.showDuplicateButton) {
                 toolsConfig.push({
                     type:'plus',
-                    tooltip: 'Дублювати',//'Редагувати',
+                    tooltip: window.duplicate || 'Дублювати',//'Редагувати',
                     scope:this.app,
                     handler: function(event, toolEl, panel){
                         this.getModule("notepad").duplicate(panel.ownerCt.id);// refresh logic
@@ -348,7 +346,7 @@ Ext.define('MyDesktop.Notepad', {
             if (options.showEditButton) {
                 toolsConfig.push({
                     type:'gear',
-                    tooltip: 'Редагувати',
+                    tooltip: window.edit || 'Редагувати',
                     scope:this.app,
                     handler: function(event, toolEl, panel){
                         this.getModule("notepad").edit(panel.ownerCt.id);// refresh logic
@@ -358,7 +356,7 @@ Ext.define('MyDesktop.Notepad', {
             if (options.showRemoveButton) {
                 toolsConfig.push({
                     type:'minus',
-                    tooltip: 'Видалити',
+                    tooltip: window.remove || 'Видалити',
                     scope:this.app,
                     handler: function(event, toolEl, panel){
                         this.getModule("notepad").remove(panel.ownerCt.id);// show help here

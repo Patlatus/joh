@@ -24,12 +24,6 @@ Ext.define('Ext.ux.desktop.TaskBar', {
 
     cls: 'ux-taskbar',
 
-    /**
-     * @cfg {String} startBtnText
-     * The text for the Start Button.
-     */
-    startBtnText: 'Старт',
-
     initComponent: function () {
         var me = this;
 
@@ -48,7 +42,7 @@ Ext.define('Ext.ux.desktop.TaskBar', {
                 iconCls: 'ux-start-button-icon',
                 menu: me.startMenu,
                 menuAlign: 'bl-tl',
-                text: me.startBtnText
+                text: window.start || 'Старт'
             },
             me.quickStart,
             {
@@ -87,7 +81,6 @@ Ext.define('Ext.ux.desktop.TaskBar', {
         Ext.each(this.quickStart, function (item) {
             ret.items.push({
                 tooltip: { text: item.name, align: 'bl-tl' },
-                //tooltip: item.name,
                 overflowText: item.name,
                 iconCls: item.iconCls,
                 module: item.module,

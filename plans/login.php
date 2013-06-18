@@ -43,7 +43,7 @@ else
 				setcookie('planssiteusername', $user, $one_year);
 				setcookie('planssitepassword', sha1($password), $one_year);
 			}
-			echo '{success:true,message:"'.getMyLocalizedMessage($languageXMLdoc, 'successfulloginmessage').'",userid:"'.$_SESSION['userid'].'"}';#"You have successfully been logged."
+			echo '{success:true,message:"'.getMyLocalizedMessage($languageXMLdoc, 'successfulloginmessage').'",username:"'.$_SESSION['username'].'",userid:"'.$_SESSION['userid'].'"}';#"You have successfully been logged."
 #<div class="message">You have successfully been logged.<br />
 		}
 		else
