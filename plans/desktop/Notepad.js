@@ -61,7 +61,7 @@ Ext.define('MyDesktop.Notepad', {
                                     Ext.Ajax.request({
                                         url: 'as.php',
                                         params: {
-                                            hashtag: 0,
+                                            hashtag: window.userid,
                                             text: this.ps(Ext.getCmp('notepad-editor').getValue()),
                                             title:this.ps(Ext.getCmp('title-editor').getValue()),
                                             x:this.app.getDesktop().getWindow('notepad').x,
@@ -158,7 +158,7 @@ Ext.define('MyDesktop.Notepad', {
                                     url: 'as.php',
                                     params: {
                                         id: idn,
-                                        hashtag: 0,
+                                        hashtag: window.userid,
                                         text: this.ps(Ext.getCmp('notepad-editor').getValue()),
                                         title:this.ps(Ext.getCmp('title-editor').getValue()),
                                         x:this.app.getDesktop().getWindow('notepad').x,
@@ -252,7 +252,7 @@ Ext.define('MyDesktop.Notepad', {
                                     url: 'es.php',
                                     params: {
                                         id: idn,
-                                        hashtag: 0,
+                                        hashtag: window.userid,
                                         text: this.ps(Ext.getCmp('notepad-editor').getValue()),
                                         title:this.ps(Ext.getCmp('title-editor').getValue()),
                                         x:this.app.getDesktop().getWindow('notepad').x,
