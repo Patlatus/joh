@@ -243,7 +243,7 @@ Ext.define('MyDesktop.App', {
                         handler: function() {
                             loginForm.hide();
                             regForm.show();
-                            alert(window.alertmessage2 || 'поглянь тепер на форму для логування');//this.up('form').getForm().reset();
+                            //alert(window.alertmessage2 || 'поглянь тепер на форму для логування');//this.up('form').getForm().reset();
                         }
                     }, {
                         text: (window.loglabel || 'Login'),
@@ -333,9 +333,9 @@ Ext.define('MyDesktop.App', {
                     window.userid = decodedText.userid;
                     window.currentLanguage = decodedText.language || 'en';
                     
-                    alert((window.successtitle || 'success: ') + decodedText.message + '; user = ' + decodedText.username);
+                    //alert((window.successtitle || 'success: ') + decodedText.message + '; user = ' + decodedText.username);
                 } else {
-                    alert((window.successtitle || 'success: ') + decodedText.message);
+                    //alert((window.successtitle || 'success: ') + decodedText.message);
                     window.currentLanguage = (window.navigator.systemLanguage || window.navigator.userLanguage || window.navigator.language || 'en').substr(0, 2);
                     
                 }
