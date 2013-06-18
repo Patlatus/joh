@@ -30,12 +30,16 @@ Ext.define('Ext.ux.desktop.App', {
         me.mixins.observable.constructor.call(this, config);
 
         if (Ext.isReady) {
-            Ext.Function.defer(me.init, 10, me);
+            Ext.Function.defer(me.beforeinit, 10, me);
         } else {
-            Ext.onReady(me.init, me);
+            Ext.onReady(me.beforeinit, me);
         }
     },
 
+    beforeinit : function () {
+        this.init();
+    },
+    
     init: function() {
         var me = this, desktopCfg;
 
