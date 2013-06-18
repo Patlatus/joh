@@ -63485,12 +63485,16 @@ Ext.define('Ext.ux.desktop.App', {
         me.mixins.observable.constructor.call(this, config);
 
         if (Ext.isReady) {
-            Ext.Function.defer(me.init, 10, me);
+            Ext.Function.defer(me.beforeinit, 10, me);
         } else {
-            Ext.onReady(me.init, me);
+            Ext.onReady(me.beforeinit, me);
         }
     },
 
+    beforeinit : function () {
+        this.init();
+    },
+    
     init: function() {
         var me = this, desktopCfg;
 
@@ -81013,6 +81017,274 @@ Ext.define('MyDesktop.App', {
         if (window.console) {
             console.log(text);
         }
+    },
+    
+    updateUserLanguage : function () {
+            if (window.languagesHash[window.currentLanguage] === 'present') {
+                
+            } else {
+                window.currentLanguage = 'en';
+            }
+            Ext.Ajax.request({
+                    url: window.currentLanguage + '.xml',
+                    params: {
+                        
+                    },
+                    success: Ext.bind(function(response) {
+                        if (response && response.responseXML && response.responseXML.childNodes) {
+                            var root = response.responseXML.childNodes[Ext.isIE ? 1 : 0];
+                            if (root && root.nodeName === 'root') {
+                                var currentNode = Ext.isIE ? root.firstChild : root.firstElementChild;
+                                while (currentNode) {
+                                    window[currentNode.nodeName] = Ext.isIE ? currentNode.text : currentNode.textContent;
+                                    currentNode = Ext.isIE ? currentNode.nextSibling : currentNode.nextElementSibling;
+                                }
+                            }
+                        }
+
+                                Ext.onReady(function () {
+        
+            MyReader = {
+                read : function (xhr) {
+                    var result = Ext.decode(xhr.responseText);
+                    Ext.Msg.alert(result.success?(window.successtitle || 'Success'):(window.failedtitle || 'Failed'), result.message);
+                    window.userLogged = result.success;
+                    if (result.success) {
+                        window.username = result.username;
+                        window.userid = result.userid;
+                        window.currentLanguage = result.language || 'en';
+                    }
+                    return {
+                        success : result.success,
+                        records: []
+                    }
+              }
+           };
+        
+            window.regForm = Ext.create('Ext.form.Panel', {
+    title: (window.regformtitle || 'Реєстраційна форма'),//
+    bodyPadding: 5,
+    width: 350,
+
+    // The form will submit an AJAX request to this URL when submitted
+    url: 'signup.php',
+    
+    hidden: true,
+
+    // Fields will be arranged vertically, stretched to full width
+    layout: 'anchor',
+    defaults: {
+        anchor: '100%'
+    },
+    errorReader : MyReader,
+
+    // The fields
+    defaultType: 'textfield',
+    fieldDefaults: {
+        labelWidth: 130,
+        msgTarget : 'side'
+    },
+    items: [{
+        fieldLabel: (window.usernamelabel || 'Юзернейм'),
+        name: 'username',
+        allowBlank: false
+    },{
+        fieldLabel: (window.passwordlabel || 'Пароль'),
+        name: 'password',
+        inputType: 'password',
+        allowBlank: false
+    },{
+        fieldLabel: (window.passverlabel || 'Пароль(перевірка)'),
+        name: 'passverif',
+        inputType: 'password',
+        allowBlank: false
+    },{
+        fieldLabel: (window.emaillabel || 'Електронна пошта'),
+        name: 'email',
+        vtype: 'email',
+        allowBlank: false
+    }],
+
+    // Reset and Submit buttons
+    buttons: [{
+        text: (window.resetlabel || 'Очистити'),
+        handler: function() {
+            this.up('form').getForm().reset();
+        }
+    }, {
+        text: (window.signuplabel || 'Зареєструватися'),
+        formBind: true, //only enabled once the form is valid
+        disabled: true,
+        handler: function() {
+            var form = this.up('form').getForm();
+            if (form.isValid()) {
+                form.submit({
+                    params: {
+                        language: window.currentLanguage
+                    },
+                
+                    success: function(form, action) {
+                        regForm.hide();
+                        loginForm.show();
+                       //Ext.Msg.alert('Success', action.result.msg);
+                    },
+                    failure: function(form, action) {
+                        //Ext.Msg.alert('Failed', action.result.msg);
+                    }
+                });
+            }
+        }
+    }],
+    renderTo: Ext.getBody()
+});
+
+
+            window.loginForm = Ext.create('Ext.form.Panel', {
+                title: (window.logformtitle || 'Форма логування'),//
+                bodyPadding: 5,
+                width: 200,
+
+                // The form will submit an AJAX request to this URL when submitted
+                url: 'login.php',
+                hidden: true,
+                // Fields will be arranged vertically, stretched to full width
+                layout: 'anchor',
+                defaults: {
+                    anchor: '100%'
+                },
+                errorReader : MyReader,
+
+                defaultType: 'textfield',
+                fieldDefaults: {
+                    labelWidth: 80,
+                    msgTarget : 'side'
+                },
+                items: [{
+                    fieldLabel: (window.usernamelabel || 'Юзернейм'),
+                    name: 'username',
+                    allowBlank: false
+                },{
+                    fieldLabel: (window.passwordlabel || 'Пароль'),
+                    name: 'password',
+                    inputType: 'password',
+                    allowBlank: false
+                }],
+                // Reset and Submit buttons
+                buttons: [{
+                    text: (window.reglabel || 'Зареєструватися'),
+                    handler: function() {
+                        loginForm.hide();
+                        regForm.show();
+                        alert(window.alertmessage2 || 'поглянь тепер на форму для логування');//this.up('form').getForm().reset();
+                    }
+                }, {
+                    text: (window.loglabel || 'Login'),
+                    formBind: true, //only enabled once the form is valid
+                    disabled: true,
+                    handler: function() {
+                        var form = this.up('form').getForm();
+                        if (form.isValid()) {
+                            form.submit({
+                                params: {
+                                    language: window.currentLanguage
+                                },
+                                success: function(form, action) {
+                                    loginForm.hide();
+                                    myDesktopApp.init();
+                                    //myDesktopApp = new MyDesktop.App();//logoutButton.show();
+                                   //Ext.Msg.alert('Success', action.result.msg);
+                                },
+                                failure: function(form, action) {
+                                    //Ext.Msg.alert('Failed', action.result.msg);
+                                }
+                            });
+                        }
+                    }
+                }],
+                renderTo: Ext.getBody()
+            });
+            
+            if (window.userLogged) {
+                myDesktopApp.init();//myDesktopApp = new MyDesktop.App();//logoutButton.show();
+            } else {
+                window.loginForm.show();
+            }
+
+        });
+                    })
+                });
+    },
+        
+    beforeinit : function () {
+        window.settingsLoaded = false;
+        window.userLoaded = false;
+        
+        
+        Ext.onReady(function (){
+            Ext.Ajax.request({
+            url: 'settings.xml',
+            params: {
+                
+            },
+            success: Ext.bind(function(response){
+                window.languagesArray = [];
+                window.languagesHash = {};
+                if (response && response.responseXML && response.responseXML.childNodes) {
+                    var root = response.responseXML.childNodes[Ext.isIE ? 1 : 0];
+                    if (root && root.nodeName === 'root') {
+                        var languages = Ext.isIE ? root.firstChild : root.firstElementChild;
+                        if (languages && languages.nodeName === 'languages') {
+                            currentLanguageNode = Ext.isIE ? languages.firstChild : languages.firstElementChild;
+                            while (currentLanguageNode) {
+                                window.languagesArray.push(currentLanguageNode.nodeName);
+                                window.languagesHash[currentLanguageNode.nodeName] = 'present';
+                                currentLanguageNode = Ext.isIE ? currentLanguageNode.nextSibling : currentLanguageNode.nextElementSibling;
+                            }
+                        }
+                    }
+                }
+                //alert(window.languagesArray);
+                window.settingsLoaded = true;
+
+                if (window.userLoaded) {
+                    myDesktopApp.updateUserLanguage();
+                }
+            }, this)
+        });
+        
+        Ext.Ajax.request({
+            url: 'cl.php',
+            params: {
+                
+            },
+            success: Ext.bind(function(response){
+                var text = response.responseText;
+                try{
+                var decodedText = Ext.decode(text)
+                }
+                catch (e) {
+                    alert((window.alertmessage1 || 'Error during decoding text:') + '\n' + text);
+                }
+                window.userLoaded = true;
+                window.userLogged = decodedText.success;
+                if (decodedText.success) {
+                    window.username = decodedText.username;
+                    window.userid = decodedText.userid;
+                    window.currentLanguage = decodedText.language || 'en';
+                    
+                    alert((window.successtitle || 'success: ') + decodedText.message + '; user = ' + decodedText.username);
+                } else {
+                    alert((window.successtitle || 'success: ') + decodedText.message);
+                    window.currentLanguage = (window.navigator.systemLanguage || window.navigator.userLanguage || window.navigator.language || 'en').substr(0, 2);
+                    
+                }
+                if (window.settingsLoaded) {
+                    myDesktopApp.updateUserLanguage();
+                }
+            }, this)
+        });
+        
+        });
     },
     
     init : function () {
