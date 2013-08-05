@@ -3,11 +3,13 @@ Ext.define('MyDesktop.LoginForm', {
     requires: [
         'MyDesktop.SimpleReader',
         'Ext.layout.container.Fit',
-        'Ext.form.Panel'
+        'Ext.form.Panel',
+        'Ext.form.field.ComboBox',
+        'Ext.data.AbstractStore'
     ],
     singleton: true,
     title: (window.logformtitle || 'Форма логування'),
-    width: 200,
+    width: 250,
 
     hidden: true,
     closable: false,
@@ -42,6 +44,19 @@ Ext.define('MyDesktop.LoginForm', {
             id: 'password',
             name: 'password',
             inputType: 'password',
+            allowBlank: false
+        },{
+            fieldLabel: (window.languagelabel || 'Мова'),
+            id: 'language',
+            name: 'language',
+            xtype: 'combo',
+            store: {
+                fields:['code', 'name']
+            },
+            displayField: 'name',
+            valueField: 'code',
+            queryMode: 'local',
+            forceSelection: true,
             allowBlank: false
         }],
         // Reset and Submit buttons
@@ -84,5 +99,24 @@ Ext.define('MyDesktop.LoginForm', {
         Ext.getCmp('password').setFieldLabel(window.passwordlabel || 'Пароль');
         Ext.getCmp('regbutton').setText(window.reglabel || 'Зареєструватися');
         Ext.getCmp('logbutton').setText(window.loglabel || 'Залогуватися');
+        this.languageCombo = Ext.getCmp('language');
+        this.languageCombo.setFieldLabel(window.languagelabel || 'Мова');
+        var data = [];
+        for (var i = 0; i < languagesArray.length; i++) {
+            var languageCode = languagesArray[i];
+            var languageName = languagesNames[languageCode];
+            data.push({'code':languageCode,'name':languageName});
+        }
+        if (!this.languageComboLoaded) {
+            this.languageCombo.getStore().loadData(data);
+            this.languageComboLoaded = true;
+            this.languageCombo.setValue(currentLanguage);
+            this.languageCombo.on('change', this.languageChange, this);
+        }
+    },
+    
+    languageChange : function (field, newValue, oldValue, opts) {
+        window.currentLanguage = newValue;
+        myDesktopApp.updateUserLanguage();
     }
 });

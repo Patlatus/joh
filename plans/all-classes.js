@@ -80905,8 +80905,6 @@ Ext.define('Ext.form.field.ComboBox', {
     }
 });
 
-Ext.define('MyDesktop.Matches',{requires:['Ext.form.field.ComboBox','Ext.form.Label','Ext.window.MessageBox','Ext.data.Store'],k:16,g:[],m:[],one:[],two:[],three:[],tb:null,st:null,nb:null,fm:null,r:function(w){return Math.floor(Math.random()*w);},rp:function(c){var i=this;if(c<3){return i.r(c)+1} else{ return i.r(3)+1};},wp:function(c){if((c-1)%4==0){return this.rp(c)}else{return (c-1)%4};},c:function(s){var m=this.tb.menu;m.removeAll();m.add(s);},t:function(a){this.k-=a;},ms:function(u,a){var t=this;for(var i=t.k-1;i>=t.k-a;i--){t.m[i].layout.pack=u?'end':'start';t.m[i].doLayout();}t.t(a);},am:function(){var t=this;if(t.k>=3)return ;switch(t.k){case 2:t.c(t.two);break;case 1:t.c(t.one);break;case 0:t.c([]);break;}},ng:function(){this.nb.setDisabled(false);this.st.setDisabled(false);this.fm.setDisabled(false);},cp:function(){var result;switch(this.st.getValue()){case 0:result=this.rp(this.k);break;default:result=this.wp(this.k);}this.ms(false,result);this.am();this.tb.setDisabled(false);},oc:function(i){var t=this;t.ms(1,i.tag);t.am();if(t.k==0){Ext.Msg.alert("Sorry, but you lost. :(");t.ng();return ;};t.cp();if(t.k==0){Ext.Msg.alert("Congratulations! You won! :)");t.ng();};},oc2:function(){this.nb.setDisabled(true);this.st.setDisabled(true);this.fm.setDisabled(true);this.c(this.three);this.k=16;for(var i=15;i>=0;i--){this.m[i].layout.pack='center';this.m[i].doLayout();}if(this.fm.getValue()==1){this.tb.setDisabled(true);this.cp();}},lc:function(c){return {xtype:'label',text:c,scale:'small',color:"default",cls:'floater'}},bc:function(t,i,c){return Ext.apply({xtype:'button',text:t,id:i,scale:'small',color:"default",cls:'floater'},c);},cc:function(c,d){return {xtype:'combobox',store:Ext.create('Ext.data.Store',{fields:['a','b'],data:[{"a":0,"b":c},{"a":1,"b":d}]}),queryMode:'local',displayField:'b',valueField:'a',value:0,disabled:true}},i:function(){for(var i=0;i<=15;i++)this.g.push({region:'west',width:10,border:false,layout:{type:'vbox',pack:'center',align:'center'},items:{xtype:'image',src:'images/match0.png'}});var mi=[];for(var i=1;i<=3;i++)mi.push({text:i,tag:i,handler:Ext.bind(this.oc,this)});this.three=mi;this.two=[mi[0],mi[1]];this.one=[mi[0]];return [{region:'west',width:160,border:false,layout:{type:'hbox',align:'stretch'},autoScroll:true,flex:0,items:this.g},{region:'center',border:false,flex:1},{region:'east',id:'west-panel',width:190,flex:0,border:false,layout:{type:'vbox',align:'stretch'},items:[this.lc('Choose how many matches do you want to take in your turn'),this.bc('Take','take',{menu:{items:mi}}),this.lc('Choose computer level'),this.cc("TRandomMatchesPlayer","TWiseMatchesPlayer"),this.lc('Choose who makes first move'),this.cc("User","Comp"),this.bc('Start New Game','newgame',{disabled:true,handler:Ext.bind(this.oc2,this)}),this.lc('Rules'),this.lc('Each time you can take one, two or three matches.\n/nWho takes the last one, loses.'),this.bc('Download Windows Desktop version','download',{href:'http://julfysoft.elitno.net/delphiprogs/matches/Matchesb.exe'}),{layout:'hbox',border:false,items:[this.lc('Producedby:'),{width:50,border:false},{xtype:'image',src:'images/julfysoft.jpg',flex:1}]}]}]}});
-Ext.define('MyDesktop.MatchesWindow',{extend:'Ext.ux.desktop.Module',requires:['MyDesktop.Matches'],id:'matches-win',t:'Matches game',ic:'icon-matches',m:null,p:null,init:function(){var t=this;t.launcher={text:t.t,iconCls:t.ic};t.m=new MyDesktop.Matches();t.p=t.m.i();},createWindow:function(){var t=this;var desktop=t.app.getDesktop();var win=desktop.getWindow(t.id);if(!win){win=desktop.createWindow({id:t.id,title:t.t,width:425,minWidth:330,height:330,minHeight:330,iconCls:t.ic,animCollapse:false,constrainHeader:true,layout:{type:'hbox',align:'stretch'},items:t.p});t.m.m=win.items.items[0].items.items;t.m.tb=win.items.items[2].items.items[1];t.m.st=win.items.items[2].items.items[3];t.m.fm=win.items.items[2].items.items[5];t.m.nb=win.items.items[2].items.items[6];t.m.oc2();}return win;}});
 /*!
  * Ext JS Library 4.0
  * Copyright(c) 2006-2011 Sencha Inc.
@@ -83206,6 +83204,371 @@ Ext.define('Ext.form.Panel', {
     }
 });
 
+/**
+ * This is a base class for layouts that contain a single item that automatically expands to fill the layout's
+ * container. This class is intended to be extended or created via the layout:'fit'
+ * {@link Ext.container.Container#layout} config, and should generally not need to be created directly via the new keyword.
+ *
+ * Fit layout does not have any direct config options (other than inherited ones). To fit a panel to a container using
+ * Fit layout, simply set `layout: 'fit'` on the container and add a single panel to it.
+ *
+ *     @example
+ *     Ext.create('Ext.panel.Panel', {
+ *         title: 'Fit Layout',
+ *         width: 300,
+ *         height: 150,
+ *         layout:'fit',
+ *         items: {
+ *             title: 'Inner Panel',
+ *             html: 'This is the inner panel content',
+ *             bodyPadding: 20,
+ *             border: false
+ *         },
+ *         renderTo: Ext.getBody()
+ *     });
+ *
+ * If the container has multiple items, all of the items will all be equally sized. This is usually not
+ * desired, so to avoid this, place only a **single** item in the container. This sizing of all items
+ * can be used to provide a background {@link Ext.Img image} that is "behind" another item
+ * such as a {@link Ext.view.View dataview} if you also absolutely position the items.
+ */
+Ext.define('Ext.layout.container.Fit', {
+
+    /* Begin Definitions */
+    extend: 'Ext.layout.container.Container',
+    alternateClassName: 'Ext.layout.FitLayout',
+
+    alias: 'layout.fit',
+
+    /* End Definitions */
+
+    itemCls: Ext.baseCSSPrefix + 'fit-item',
+    targetCls: Ext.baseCSSPrefix + 'layout-fit',
+    type: 'fit',
+   
+    /**
+     * @cfg {Object} defaultMargins
+     * If the individual contained items do not have a margins property specified or margin specified via CSS, the
+     * default margins from this property will be applied to each item.
+     *
+     * This property may be specified as an object containing margins to apply in the format:
+     *
+     *     {
+     *         top: (top margin),
+     *         right: (right margin),
+     *         bottom: (bottom margin),
+     *         left: (left margin)
+     *     }
+     *
+     * This property may also be specified as a string containing space-separated, numeric margin values. The order of
+     * the sides associated with each value matches the way CSS processes margin values:
+     *
+     *   - If there is only one value, it applies to all sides.
+     *   - If there are two values, the top and bottom borders are set to the first value and the right and left are
+     *     set to the second.
+     *   - If there are three values, the top is set to the first value, the left and right are set to the second,
+     *     and the bottom is set to the third.
+     *   - If there are four values, they apply to the top, right, bottom, and left, respectively.
+     *
+     */
+    defaultMargins: {
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0
+    },
+
+    manageMargins: true,
+
+    sizePolicies: {
+        0: { setsWidth: 0, setsHeight: 0 },
+        1: { setsWidth: 1, setsHeight: 0 },
+        2: { setsWidth: 0, setsHeight: 1 },
+        3: { setsWidth: 1, setsHeight: 1 }
+    },
+
+    getItemSizePolicy: function (item, ownerSizeModel) {
+        // this layout's sizePolicy is derived from its owner's sizeModel:
+        var sizeModel = ownerSizeModel || this.owner.getSizeModel(),
+            mode = (sizeModel.width.shrinkWrap ? 0 : 1) |
+                   (sizeModel.height.shrinkWrap ? 0 : 2);
+
+       return this.sizePolicies[mode];
+    },
+
+    beginLayoutCycle: function (ownerContext, firstCycle) {
+        var me = this,
+            // determine these before the lastSizeModels get updated:
+            resetHeight = me.lastHeightModel && me.lastHeightModel.calculated,
+            resetWidth = me.lastWidthModel && me.lastWidthModel.calculated,
+            resetSizes = resetWidth || resetHeight,
+            maxChildMinHeight = 0, maxChildMinWidth = 0,
+            c, childItems, i, item, length, margins, minHeight, minWidth, style, undef;
+
+        me.callParent(arguments);
+
+        // Clear any dimensions which we set before calculation, in case the current
+        // settings affect the available size. This particularly effects self-sizing
+        // containers such as fields, in which the target element is naturally sized,
+        // and should not be stretched by a sized child item.
+        if (resetSizes && ownerContext.targetContext.el.dom.tagName.toUpperCase() != 'TD') {
+            resetSizes = resetWidth = resetHeight = false;
+        }
+
+        childItems = ownerContext.childItems;
+        length = childItems.length;
+
+        for (i = 0; i < length; ++i) {
+            item = childItems[i];
+
+            // On the firstCycle, we determine the max of the minWidth/Height of the items
+            // since these can cause the container to grow scrollbars despite our attempts
+            // to fit the child to the container.
+            if (firstCycle) {
+                c = item.target;
+                minHeight = c.minHeight;
+                minWidth = c.minWidth;
+
+                if (minWidth || minHeight) {
+                    margins = item.marginInfo || item.getMarginInfo();
+                    // if the child item has undefined minWidth/Height, these will become
+                    // NaN by adding the margins...
+                    minHeight += margins.height;
+                    minWidth += margins.height;
+
+                    // if the child item has undefined minWidth/Height, these comparisons
+                    // will evaluate to false... that is, "0 < NaN" == false...
+                    if (maxChildMinHeight < minHeight) {
+                        maxChildMinHeight = minHeight;
+                    }
+                    if (maxChildMinWidth < minWidth) {
+                        maxChildMinWidth = minWidth;
+                    }
+                }
+            }
+
+            if (resetSizes) {
+                style = item.el.dom.style;
+
+                if (resetHeight) {
+                    style.height = '';
+                }
+                if (resetWidth) {
+                    style.width = '';
+                }
+            }
+        }
+
+        if (firstCycle) {
+            ownerContext.maxChildMinHeight = maxChildMinHeight;
+            ownerContext.maxChildMinWidth = maxChildMinWidth;
+        }
+
+        // Cache the overflowX/Y flags, but make them false in shrinkWrap mode (since we
+        // won't be triggering overflow in that case) and false if we have no minSize (so
+        // no child to trigger an overflow).
+        c = ownerContext.target;
+        ownerContext.overflowX = (!ownerContext.widthModel.shrinkWrap && 
+                                   ownerContext.maxChildMinWidth &&
+                                   (c.autoScroll || c.overflowX)) || undef;
+
+        ownerContext.overflowY = (!ownerContext.heightModel.shrinkWrap &&
+                                   ownerContext.maxChildMinHeight &&
+                                   (c.autoScroll || c.overflowY)) || undef;
+    },
+
+    calculate : function (ownerContext) {
+        var me = this,
+            childItems = ownerContext.childItems,
+            length = childItems.length,
+            containerSize = me.getContainerSize(ownerContext),
+            info = {
+                length: length,
+                ownerContext: ownerContext,
+                targetSize: containerSize
+            },
+            shrinkWrapWidth = ownerContext.widthModel.shrinkWrap,
+            shrinkWrapHeight = ownerContext.heightModel.shrinkWrap,
+            overflowX = ownerContext.overflowX,
+            overflowY = ownerContext.overflowY,
+            scrollbars, scrollbarSize, padding, i, contentWidth, contentHeight;
+
+        if (overflowX || overflowY) {
+            // If we have children that have minHeight/Width, we may be forced to overflow
+            // and gain scrollbars. If so, we want to remove their space from the other
+            // axis so that we fit things inside the scrollbars rather than under them.
+            scrollbars = me.getScrollbarsNeeded(
+                    overflowX && containerSize.width, overflowY && containerSize.height,
+                    ownerContext.maxChildMinWidth, ownerContext.maxChildMinHeight);
+
+            if (scrollbars) {
+                scrollbarSize = Ext.getScrollbarSize();
+                if (scrollbars & 1) { // if we need the hscrollbar, remove its height
+                    containerSize.height -= scrollbarSize.height;
+                }
+                if (scrollbars & 2) { // if we need the vscrollbar, remove its width
+                    containerSize.width -= scrollbarSize.width;
+                }
+            }
+        }
+
+        // Size the child items to the container (if non-shrinkWrap):
+        for (i = 0; i < length; ++i) {
+            info.index = i;
+            me.fitItem(childItems[i], info);
+        }
+        
+        if (shrinkWrapHeight || shrinkWrapWidth) {
+            padding = ownerContext.targetContext.getPaddingInfo();
+            
+            if (shrinkWrapWidth) {
+                if (overflowY && !containerSize.gotHeight) {
+                    // if we might overflow vertically and don't have the container height,
+                    // we don't know if we will need a vscrollbar or not, so we must wait
+                    // for that height so that we can determine the contentWidth...
+                    me.done = false;
+                } else {
+                    contentWidth = info.contentWidth + padding.width;
+                    // the scrollbar flag (if set) will indicate that an overflow exists on
+                    // the horz(1) or vert(2) axis... if not set, then there could never be
+                    // an overflow...
+                    if (scrollbars & 2) { // if we need the vscrollbar, add its width
+                        contentWidth += scrollbarSize.width;
+                    }
+                    if (!ownerContext.setContentWidth(contentWidth)) {
+                        me.done = false;
+                    }
+                }
+            }
+
+            if (shrinkWrapHeight) {
+                if (overflowX && !containerSize.gotWidth) {
+                    // if we might overflow horizontally and don't have the container width,
+                    // we don't know if we will need a hscrollbar or not, so we must wait
+                    // for that width so that we can determine the contentHeight...
+                    me.done = false;
+                } else {
+                    contentHeight = info.contentHeight + padding.height;
+                    // the scrollbar flag (if set) will indicate that an overflow exists on
+                    // the horz(1) or vert(2) axis... if not set, then there could never be
+                    // an overflow...
+                    if (scrollbars & 1) { // if we need the hscrollbar, add its height
+                        contentHeight += scrollbarSize.height;
+                    }
+                    if (!ownerContext.setContentHeight(contentHeight)) {
+                        me.done = false;
+                    }
+                }
+            }
+        }
+    },
+
+    fitItem: function (itemContext, info) {
+        var me = this;
+
+        if (itemContext.invalid) {
+            me.done = false;
+            return;
+        }
+
+        info.margins = itemContext.getMarginInfo();
+        info.needed = info.got = 0;
+
+        me.fitItemWidth(itemContext, info);
+        me.fitItemHeight(itemContext, info);
+
+        // If not all required dimensions have been satisfied, we're not done.
+        if (info.got != info.needed) {
+            me.done = false;
+        }
+    },
+
+    fitItemWidth: function (itemContext, info) {
+        var contentWidth, width;
+        // Attempt to set only dimensions that are being controlled, not shrinkWrap dimensions
+        if (info.ownerContext.widthModel.shrinkWrap) {
+            // contentWidth must include the margins to be consistent with setItemWidth
+            width = itemContext.getProp('width') + info.margins.width;
+            // because we add margins, width will be NaN or a number (not undefined)
+
+            contentWidth = info.contentWidth;
+            if (contentWidth === undefined) {
+                info.contentWidth = width;
+            } else {
+                info.contentWidth = Math.max(contentWidth, width);
+            }
+        } else if (itemContext.widthModel.calculated) {
+            ++info.needed;
+            if (info.targetSize.gotWidth) {
+                ++info.got;
+                this.setItemWidth(itemContext, info);
+            }
+        }
+
+        this.positionItemX(itemContext, info);
+    },
+
+    fitItemHeight: function (itemContext, info) {
+        var contentHeight, height;
+        if (info.ownerContext.heightModel.shrinkWrap) {
+            // contentHeight must include the margins to be consistent with setItemHeight
+            height = itemContext.getProp('height') + info.margins.height;
+            // because we add margins, height will be NaN or a number (not undefined)
+
+            contentHeight = info.contentHeight;
+            if (contentHeight === undefined) {
+                info.contentHeight = height;
+            } else {
+                info.contentHeight = Math.max(contentHeight, height);
+            }
+        } else if (itemContext.heightModel.calculated) {
+            ++info.needed;
+            if (info.targetSize.gotHeight) {
+                ++info.got;
+                this.setItemHeight(itemContext, info);
+            }
+        }
+
+        this.positionItemY(itemContext, info);
+    },
+
+    positionItemX: function (itemContext, info) {
+        var margins = info.margins;
+
+        // Adjust position to account for configured margins or if we have multiple items
+        // (all items should overlap):
+        if (info.index || margins.left) {
+            itemContext.setProp('x', margins.left);
+        }
+
+        if (margins.width) {
+            // Need the margins for shrink-wrapping but old IE sometimes collapses the left margin into the padding
+            itemContext.setProp('margin-right', margins.width);
+        }
+    },
+
+    positionItemY: function (itemContext, info) {
+        var margins = info.margins;
+
+        if (info.index || margins.top) {
+            itemContext.setProp('y', margins.top);
+        }
+
+        if (margins.height) {
+            // Need the margins for shrink-wrapping but old IE sometimes collapses the top margin into the padding
+            itemContext.setProp('margin-bottom', margins.height);
+        }
+    },
+
+    setItemHeight: function (itemContext, info) {
+        itemContext.setHeight(info.targetSize.height - info.margins.height);
+    },
+
+    setItemWidth: function (itemContext, info) {
+        itemContext.setWidth(info.targetSize.width - info.margins.width);
+    }
+});
+
 Ext.define('MyDesktop.SimpleReader', {
     singleton: true,
     read : function (xhr) {
@@ -83215,7 +83578,6 @@ Ext.define('MyDesktop.SimpleReader', {
             window.username = result.username;
             window.userid = result.userid;
             window.resultMessage = result.message;
-            //window.currentLanguage = result.language || 'en';
         }
         return {
             success : result.success,
@@ -83262,12 +83624,12 @@ Ext.define('MyDesktop.RegistrationForm', {
         items: [{
             fieldLabel: (window.usernamelabel || 'Юзернейм'),
             id:'run',
-            name: 'username',
+            name: 'rusername',
             allowBlank: false
         },{
             fieldLabel: (window.passwordlabel || 'Пароль'),
             id:'rpw',
-            name: 'password',
+            name: 'rpassword',
             inputType: 'password',
             allowBlank: false
         },{
@@ -83340,11 +83702,13 @@ Ext.define('MyDesktop.LoginForm', {
     requires: [
         'MyDesktop.SimpleReader',
         'Ext.layout.container.Fit',
-        'Ext.form.Panel'
+        'Ext.form.Panel',
+        'Ext.form.field.ComboBox',
+        'Ext.data.AbstractStore'
     ],
     singleton: true,
     title: (window.logformtitle || 'Форма логування'),
-    width: 200,
+    width: 250,
 
     hidden: true,
     closable: false,
@@ -83380,6 +83744,19 @@ Ext.define('MyDesktop.LoginForm', {
             name: 'password',
             inputType: 'password',
             allowBlank: false
+        },{
+            fieldLabel: (window.languagelabel || 'Мова'),
+            id: 'language',
+            name: 'language',
+            xtype: 'combo',
+            store: {
+                fields:['code', 'name']
+            },
+            displayField: 'name',
+            valueField: 'code',
+            queryMode: 'local',
+            forceSelection: true,
+            allowBlank: false
         }],
         // Reset and Submit buttons
         buttons: [{
@@ -83388,7 +83765,6 @@ Ext.define('MyDesktop.LoginForm', {
             handler: function() {
                 loginForm.hide();
                 regForm.show();
-                //alert(window.alertmessage2 || 'поглянь тепер на форму для логування');//this.up('form').getForm().reset();
             }
         }, {
             text: (window.loglabel || 'Залогуватися'),
@@ -83422,6 +83798,25 @@ Ext.define('MyDesktop.LoginForm', {
         Ext.getCmp('password').setFieldLabel(window.passwordlabel || 'Пароль');
         Ext.getCmp('regbutton').setText(window.reglabel || 'Зареєструватися');
         Ext.getCmp('logbutton').setText(window.loglabel || 'Залогуватися');
+        this.languageCombo = Ext.getCmp('language');
+        this.languageCombo.setFieldLabel(window.languagelabel || 'Мова');
+        var data = [];
+        for (var i = 0; i < languagesArray.length; i++) {
+            var languageCode = languagesArray[i];
+            var languageName = languagesNames[languageCode];
+            data.push({'code':languageCode,'name':languageName});
+        }
+        if (!this.languageComboLoaded) {
+            this.languageCombo.getStore().loadData(data);
+            this.languageComboLoaded = true;
+            this.languageCombo.setValue(currentLanguage);
+            this.languageCombo.on('change', this.languageChange, this);
+        }
+    },
+    
+    languageChange : function (field, newValue, oldValue, opts) {
+        window.currentLanguage = newValue;
+        myDesktopApp.updateUserLanguage();
     }
 });
 Ext.define('MyDesktop.App', {
@@ -83429,11 +83824,12 @@ Ext.define('MyDesktop.App', {
     requires: 
         ['Ext.window.MessageBox',
         'Ext.form.Panel',
+        'Ext.data.reader.Json',
+        'Ext.data.Store',
         'Ext.ux.desktop.ShortcutModel',
         'Ext.ux.desktop.Desktop',
         'MyDesktop.SystemStatus',
         'MyDesktop.VideoWindow',
-        'MyDesktop.MatchesWindow',
         'MyDesktop.AboutTextWindow',
         'MyDesktop.Notepad',
         'MyDesktop.SimpleReader',
@@ -83448,47 +83844,43 @@ Ext.define('MyDesktop.App', {
     
     getDesktopConfig:function () {
         var me = this,ret = me.callParent();
-        return Ext.apply(ret,
-            {
-                contextMenuItems: [
-                    {
-                        text:window.changesettings || 'Змінити налаштування',
-                        handler:me.onSettings,
-                        scope:me
-                    }
-                ],
-                shortcuts:Ext.create('Ext.data.Store',{
-                    model:'Ext.ux.desktop.ShortcutModel',
-                    data: []
-                }),
-                wallpaper: 'wallpapers/isus-wallpaper.jpg',
-                wallpaperStretch:false
-            }
-        );
+        return Ext.apply(ret, {
+            contextMenuItems: [{
+                text:window.changesettings || 'Змінити налаштування',
+                handler:me.onSettings,
+                scope:me
+            }],
+            shortcuts: Ext.create('Ext.data.Store', {
+                model:'Ext.ux.desktop.ShortcutModel',
+                data: []
+            }),
+            wallpaper: 'wallpapers/isus-wallpaper.jpg',
+            wallpaperStretch:false
+        });
     },
     
     getStartConfig :function() {
-        var me = this,ret = me.callParent();
+        var me  = this,
+            ret = me.callParent();
         return Ext.apply(ret, {
-            title:window.username,
-            iconCls:'user',
-            height:300,
-            toolConfig:{
-                width:120,items:[
-                    {
-                        text:window.settings || 'Налаштування',
-                        iconCls:'settings',
-                        handler:me.onSettings,
-                        scope:me
-                    },
-                    '-',
-                    {
-                        text:(window.logoutlabel || 'Вийти'),
-                        iconCls:'logout',
-                        handler:me.onLogout,
-                        scope:me
-                    }
-                ]
+            title: window.username,
+            iconCls: 'user',
+            height: 300,
+            toolConfig: {
+                width: 120,
+                items: [{
+                    text:window.settings || 'Налаштування',
+                    iconCls:'settings',
+                    handler:me.onSettings,
+                    scope:me
+                },
+                '-',
+                {
+                    text:(window.logoutlabel || 'Вийти'),
+                    iconCls:'logout',
+                    handler:me.onLogout,
+                    scope:me
+                }]
             }
         });
     },
@@ -83496,19 +83888,15 @@ Ext.define('MyDesktop.App', {
     getTaskbarConfig:function () {
         var ret = this.callParent();
         return Ext.apply(ret, {
-            quickStart:[
-                {
-                    name:window.addnote || 'Додати запис',
-                    iconCls:'notepad',
-                    module:'notepad'
-                }
-            ],
-            trayItems:[
-                { 
-                    xtype:'trayclock',
-                    flex:1
-                }
-            ]
+            quickStart: [{
+                name:window.addnote || 'Додати запис',
+                iconCls:'notepad',
+                module:'notepad'
+            }],
+            trayItems:[{ 
+                xtype:'trayclock',
+                flex:1
+            }]
         });
     },
     
@@ -83548,19 +83936,23 @@ Ext.define('MyDesktop.App', {
                     }
                 }
 
-                window.regForm = MyDesktop.RegistrationForm;
-                window.regForm.update();
-                window.regForm.render(Ext.getBody());
-
-
-                window.loginForm = MyDesktop.LoginForm;
-                window.loginForm.update();
-                window.loginForm.render(Ext.getBody());
-        
-                if (window.userLogged) {
-                    myDesktopApp.init();
+                var isInitialized = window.regForm && window.loginForm;
+                if (!isInitialized) {
+                    window.regForm = MyDesktop.RegistrationForm;
+                    window.regForm.update();
+                    window.regForm.render(Ext.getBody());
+                    
+                    window.loginForm = MyDesktop.LoginForm;
+                    window.loginForm.update();
+                    window.loginForm.render(Ext.getBody());
+                    if (window.userLogged) {
+                        myDesktopApp.init();
+                    } else {
+                        window.loginForm.show();
+                    }
                 } else {
-                    window.loginForm.show();
+                    window.regForm.update();
+                    window.loginForm.update();
                 }
             })
         });
@@ -83569,9 +83961,14 @@ Ext.define('MyDesktop.App', {
     beforeinit : function () {
         window.settingsLoaded = false;
         window.userLoaded = false;
-        Ext.getBody().setStyle({
-            backgroundImage: 'url(wallpapers/isus-wallpaper.jpg)'
-        });
+        window.WallpaperManager = {
+            setWallpaper : function (url) {
+                Ext.getBody().setStyle({
+                    backgroundImage: ['url(',url,')'].join('')
+                });
+            }
+        };
+        WallpaperManager.setWallpaper('wallpapers/isus-wallpaper.jpg');
         Ext.Ajax.request({
             url: 'settings.xml',
             params: {
@@ -83580,6 +83977,7 @@ Ext.define('MyDesktop.App', {
             success: Ext.bind(function(response){
                 window.languagesArray = [];
                 window.languagesHash = {};
+                window.languagesNames = {};
                 if (response && response.responseXML && response.responseXML.childNodes) {
                     var root = response.responseXML.childNodes[Ext.isIE ? 1 : 0];
                     if (root && root.nodeName === 'root') {
@@ -83589,6 +83987,7 @@ Ext.define('MyDesktop.App', {
                             while (currentLanguageNode) {
                                 window.languagesArray.push(currentLanguageNode.nodeName);
                                 window.languagesHash[currentLanguageNode.nodeName] = 'present';
+                                window.languagesNames[currentLanguageNode.nodeName] = Ext.isIE ? currentLanguageNode.text : currentLanguageNode.textContent;
                                 currentLanguageNode = Ext.isIE ? currentLanguageNode.nextSibling : currentLanguageNode.nextElementSibling;
                             }
                         }
@@ -83617,24 +84016,16 @@ Ext.define('MyDesktop.App', {
                 }
                 window.userLoaded = true;
                 window.userLogged = decodedText.success;
-                window.currentLanguage = (window.navigator.systemLanguage || window.navigator.userLanguage || window.navigator.language || 'en').substr(0, 2);
+                window.currentLanguage = (window.navigator.userLanguage || window.navigator.systemLanguage || window.navigator.language || 'en').substr(0, 2);
                 if (decodedText.success) {
                     window.username = decodedText.username;
                     window.userid = decodedText.userid;
-                    //window.currentLanguage = decodedText.language || 'en';
-                    
-                    //alert((window.successtitle || 'success: ') + decodedText.message + '; user = ' + decodedText.username);
-                } else {
-                    //alert((window.successtitle || 'success: ') + decodedText.message);
-                    //window.currentLanguage = (window.navigator.systemLanguage || window.navigator.userLanguage || window.navigator.language || 'en').substr(0, 2);
-                    
                 }
                 if (window.settingsLoaded) {
                     myDesktopApp.updateUserLanguage();
                 }
             }, this)
         });
-
     },
     
     init : function () {
@@ -83642,10 +84033,20 @@ Ext.define('MyDesktop.App', {
         Ext.Msg.buttonText.yes = window.yes || 'Так';
         Ext.Msg.buttonText.no = window.no || 'Ні';
         
-        var dt = new Date();
-        var x = Ext.Date.format(dt, 'Y-m-d');
-            
-            
+        this.loadStickers('gn.php', window.userid, 0, 50, 'background-color:yellow;', {
+            showDuplicateButton : false,
+            showEditButton      : true,
+            showRemoveButton    : true
+        });
+        
+        this.loadStickers('gn.php', 'default', 200, 100, 'background-color:00ff00;', {
+            showDuplicateButton : true,
+            showEditButton      : false,
+            showRemoveButton    : false
+        });
+    },
+    
+    loadStickers : function (url, hashtag, defX, defYShift, bodyStyle, options) {
         var xStore = Ext.create('Ext.data.Store', {
             fields: [
                 {name: 'id', type: 'int'},
@@ -83656,47 +84057,11 @@ Ext.define('MyDesktop.App', {
                 {name: 'hashtag', type: 'string'}
             ],
             autoLoad: true
-
-            
-        });
-
-        Ext.Ajax.request({
-            url: 'gn.php',
-            params: {
-                hashtag: window.userid
-            },
-            success: Ext.bind(function(response){
-                var text = response.responseText;
-                try{
-                var decodedText = Ext.decode(text)
-                }
-                catch (e) {
-                    alert((window.alertmessage1 || 'Error during decoding text:') + '\n' + text);
-                }
-                this.write('text:\n'+text);
-                this.write('decodedText:\n'+decodedText);
-                xStore.loadData(decodedText);
-                
-                for (var i = 0; i < xStore.data.items.length; i++) {
-                    var data = xStore.data.items[i].data;
-                    if (data.x === null || data.x === undefined) {
-                        data.x = 0;
-                    }
-                    if (data.y === null || data.y === undefined) {
-                        data.y = i * 50;
-                    }
-                    this.getModule("notepad").showPanel(data, 'background-color:yellow;', {
-                        showDuplicateButton : false,
-                        showEditButton      : true,
-                        showRemoveButton    : true
-                    });
-                }
-            }, this)
         });
         Ext.Ajax.request({
-            url: 'gn.php',
+            url: url,
             params: {
-                hashtag: 'default'
+                hashtag: hashtag
             },
             success: Ext.bind(function(response){
                 var text = response.responseText;
@@ -83714,16 +84079,12 @@ Ext.define('MyDesktop.App', {
                 for (var i = 0; i < xStore.data.items.length; i++) {
                     var data = xStore.data.items[i].data;
                     if (data.x === null || data.x === undefined) {
-                        data.x = 200;
+                        data.x = defX;
                     }
                     if (data.y === null || data.y === undefined) {
-                        data.y = i * 100;
+                        data.y = i * defYShift;
                     }
-                    this.getModule("notepad").showPanel(data, 'background-color:00ff00;', {
-                        showDuplicateButton : true,
-                        showEditButton      : false,
-                        showRemoveButton    : false
-                    });
+                    this.getModule("notepad").showPanel(data, bodyStyle, options);
                 }
             }, this)
         });
@@ -86609,371 +86970,6 @@ Ext.define('Ext.ux.desktop.Wallpaper', {
             }
         }
         return me;
-    }
-});
-
-/**
- * This is a base class for layouts that contain a single item that automatically expands to fill the layout's
- * container. This class is intended to be extended or created via the layout:'fit'
- * {@link Ext.container.Container#layout} config, and should generally not need to be created directly via the new keyword.
- *
- * Fit layout does not have any direct config options (other than inherited ones). To fit a panel to a container using
- * Fit layout, simply set `layout: 'fit'` on the container and add a single panel to it.
- *
- *     @example
- *     Ext.create('Ext.panel.Panel', {
- *         title: 'Fit Layout',
- *         width: 300,
- *         height: 150,
- *         layout:'fit',
- *         items: {
- *             title: 'Inner Panel',
- *             html: 'This is the inner panel content',
- *             bodyPadding: 20,
- *             border: false
- *         },
- *         renderTo: Ext.getBody()
- *     });
- *
- * If the container has multiple items, all of the items will all be equally sized. This is usually not
- * desired, so to avoid this, place only a **single** item in the container. This sizing of all items
- * can be used to provide a background {@link Ext.Img image} that is "behind" another item
- * such as a {@link Ext.view.View dataview} if you also absolutely position the items.
- */
-Ext.define('Ext.layout.container.Fit', {
-
-    /* Begin Definitions */
-    extend: 'Ext.layout.container.Container',
-    alternateClassName: 'Ext.layout.FitLayout',
-
-    alias: 'layout.fit',
-
-    /* End Definitions */
-
-    itemCls: Ext.baseCSSPrefix + 'fit-item',
-    targetCls: Ext.baseCSSPrefix + 'layout-fit',
-    type: 'fit',
-   
-    /**
-     * @cfg {Object} defaultMargins
-     * If the individual contained items do not have a margins property specified or margin specified via CSS, the
-     * default margins from this property will be applied to each item.
-     *
-     * This property may be specified as an object containing margins to apply in the format:
-     *
-     *     {
-     *         top: (top margin),
-     *         right: (right margin),
-     *         bottom: (bottom margin),
-     *         left: (left margin)
-     *     }
-     *
-     * This property may also be specified as a string containing space-separated, numeric margin values. The order of
-     * the sides associated with each value matches the way CSS processes margin values:
-     *
-     *   - If there is only one value, it applies to all sides.
-     *   - If there are two values, the top and bottom borders are set to the first value and the right and left are
-     *     set to the second.
-     *   - If there are three values, the top is set to the first value, the left and right are set to the second,
-     *     and the bottom is set to the third.
-     *   - If there are four values, they apply to the top, right, bottom, and left, respectively.
-     *
-     */
-    defaultMargins: {
-        top: 0,
-        right: 0,
-        bottom: 0,
-        left: 0
-    },
-
-    manageMargins: true,
-
-    sizePolicies: {
-        0: { setsWidth: 0, setsHeight: 0 },
-        1: { setsWidth: 1, setsHeight: 0 },
-        2: { setsWidth: 0, setsHeight: 1 },
-        3: { setsWidth: 1, setsHeight: 1 }
-    },
-
-    getItemSizePolicy: function (item, ownerSizeModel) {
-        // this layout's sizePolicy is derived from its owner's sizeModel:
-        var sizeModel = ownerSizeModel || this.owner.getSizeModel(),
-            mode = (sizeModel.width.shrinkWrap ? 0 : 1) |
-                   (sizeModel.height.shrinkWrap ? 0 : 2);
-
-       return this.sizePolicies[mode];
-    },
-
-    beginLayoutCycle: function (ownerContext, firstCycle) {
-        var me = this,
-            // determine these before the lastSizeModels get updated:
-            resetHeight = me.lastHeightModel && me.lastHeightModel.calculated,
-            resetWidth = me.lastWidthModel && me.lastWidthModel.calculated,
-            resetSizes = resetWidth || resetHeight,
-            maxChildMinHeight = 0, maxChildMinWidth = 0,
-            c, childItems, i, item, length, margins, minHeight, minWidth, style, undef;
-
-        me.callParent(arguments);
-
-        // Clear any dimensions which we set before calculation, in case the current
-        // settings affect the available size. This particularly effects self-sizing
-        // containers such as fields, in which the target element is naturally sized,
-        // and should not be stretched by a sized child item.
-        if (resetSizes && ownerContext.targetContext.el.dom.tagName.toUpperCase() != 'TD') {
-            resetSizes = resetWidth = resetHeight = false;
-        }
-
-        childItems = ownerContext.childItems;
-        length = childItems.length;
-
-        for (i = 0; i < length; ++i) {
-            item = childItems[i];
-
-            // On the firstCycle, we determine the max of the minWidth/Height of the items
-            // since these can cause the container to grow scrollbars despite our attempts
-            // to fit the child to the container.
-            if (firstCycle) {
-                c = item.target;
-                minHeight = c.minHeight;
-                minWidth = c.minWidth;
-
-                if (minWidth || minHeight) {
-                    margins = item.marginInfo || item.getMarginInfo();
-                    // if the child item has undefined minWidth/Height, these will become
-                    // NaN by adding the margins...
-                    minHeight += margins.height;
-                    minWidth += margins.height;
-
-                    // if the child item has undefined minWidth/Height, these comparisons
-                    // will evaluate to false... that is, "0 < NaN" == false...
-                    if (maxChildMinHeight < minHeight) {
-                        maxChildMinHeight = minHeight;
-                    }
-                    if (maxChildMinWidth < minWidth) {
-                        maxChildMinWidth = minWidth;
-                    }
-                }
-            }
-
-            if (resetSizes) {
-                style = item.el.dom.style;
-
-                if (resetHeight) {
-                    style.height = '';
-                }
-                if (resetWidth) {
-                    style.width = '';
-                }
-            }
-        }
-
-        if (firstCycle) {
-            ownerContext.maxChildMinHeight = maxChildMinHeight;
-            ownerContext.maxChildMinWidth = maxChildMinWidth;
-        }
-
-        // Cache the overflowX/Y flags, but make them false in shrinkWrap mode (since we
-        // won't be triggering overflow in that case) and false if we have no minSize (so
-        // no child to trigger an overflow).
-        c = ownerContext.target;
-        ownerContext.overflowX = (!ownerContext.widthModel.shrinkWrap && 
-                                   ownerContext.maxChildMinWidth &&
-                                   (c.autoScroll || c.overflowX)) || undef;
-
-        ownerContext.overflowY = (!ownerContext.heightModel.shrinkWrap &&
-                                   ownerContext.maxChildMinHeight &&
-                                   (c.autoScroll || c.overflowY)) || undef;
-    },
-
-    calculate : function (ownerContext) {
-        var me = this,
-            childItems = ownerContext.childItems,
-            length = childItems.length,
-            containerSize = me.getContainerSize(ownerContext),
-            info = {
-                length: length,
-                ownerContext: ownerContext,
-                targetSize: containerSize
-            },
-            shrinkWrapWidth = ownerContext.widthModel.shrinkWrap,
-            shrinkWrapHeight = ownerContext.heightModel.shrinkWrap,
-            overflowX = ownerContext.overflowX,
-            overflowY = ownerContext.overflowY,
-            scrollbars, scrollbarSize, padding, i, contentWidth, contentHeight;
-
-        if (overflowX || overflowY) {
-            // If we have children that have minHeight/Width, we may be forced to overflow
-            // and gain scrollbars. If so, we want to remove their space from the other
-            // axis so that we fit things inside the scrollbars rather than under them.
-            scrollbars = me.getScrollbarsNeeded(
-                    overflowX && containerSize.width, overflowY && containerSize.height,
-                    ownerContext.maxChildMinWidth, ownerContext.maxChildMinHeight);
-
-            if (scrollbars) {
-                scrollbarSize = Ext.getScrollbarSize();
-                if (scrollbars & 1) { // if we need the hscrollbar, remove its height
-                    containerSize.height -= scrollbarSize.height;
-                }
-                if (scrollbars & 2) { // if we need the vscrollbar, remove its width
-                    containerSize.width -= scrollbarSize.width;
-                }
-            }
-        }
-
-        // Size the child items to the container (if non-shrinkWrap):
-        for (i = 0; i < length; ++i) {
-            info.index = i;
-            me.fitItem(childItems[i], info);
-        }
-        
-        if (shrinkWrapHeight || shrinkWrapWidth) {
-            padding = ownerContext.targetContext.getPaddingInfo();
-            
-            if (shrinkWrapWidth) {
-                if (overflowY && !containerSize.gotHeight) {
-                    // if we might overflow vertically and don't have the container height,
-                    // we don't know if we will need a vscrollbar or not, so we must wait
-                    // for that height so that we can determine the contentWidth...
-                    me.done = false;
-                } else {
-                    contentWidth = info.contentWidth + padding.width;
-                    // the scrollbar flag (if set) will indicate that an overflow exists on
-                    // the horz(1) or vert(2) axis... if not set, then there could never be
-                    // an overflow...
-                    if (scrollbars & 2) { // if we need the vscrollbar, add its width
-                        contentWidth += scrollbarSize.width;
-                    }
-                    if (!ownerContext.setContentWidth(contentWidth)) {
-                        me.done = false;
-                    }
-                }
-            }
-
-            if (shrinkWrapHeight) {
-                if (overflowX && !containerSize.gotWidth) {
-                    // if we might overflow horizontally and don't have the container width,
-                    // we don't know if we will need a hscrollbar or not, so we must wait
-                    // for that width so that we can determine the contentHeight...
-                    me.done = false;
-                } else {
-                    contentHeight = info.contentHeight + padding.height;
-                    // the scrollbar flag (if set) will indicate that an overflow exists on
-                    // the horz(1) or vert(2) axis... if not set, then there could never be
-                    // an overflow...
-                    if (scrollbars & 1) { // if we need the hscrollbar, add its height
-                        contentHeight += scrollbarSize.height;
-                    }
-                    if (!ownerContext.setContentHeight(contentHeight)) {
-                        me.done = false;
-                    }
-                }
-            }
-        }
-    },
-
-    fitItem: function (itemContext, info) {
-        var me = this;
-
-        if (itemContext.invalid) {
-            me.done = false;
-            return;
-        }
-
-        info.margins = itemContext.getMarginInfo();
-        info.needed = info.got = 0;
-
-        me.fitItemWidth(itemContext, info);
-        me.fitItemHeight(itemContext, info);
-
-        // If not all required dimensions have been satisfied, we're not done.
-        if (info.got != info.needed) {
-            me.done = false;
-        }
-    },
-
-    fitItemWidth: function (itemContext, info) {
-        var contentWidth, width;
-        // Attempt to set only dimensions that are being controlled, not shrinkWrap dimensions
-        if (info.ownerContext.widthModel.shrinkWrap) {
-            // contentWidth must include the margins to be consistent with setItemWidth
-            width = itemContext.getProp('width') + info.margins.width;
-            // because we add margins, width will be NaN or a number (not undefined)
-
-            contentWidth = info.contentWidth;
-            if (contentWidth === undefined) {
-                info.contentWidth = width;
-            } else {
-                info.contentWidth = Math.max(contentWidth, width);
-            }
-        } else if (itemContext.widthModel.calculated) {
-            ++info.needed;
-            if (info.targetSize.gotWidth) {
-                ++info.got;
-                this.setItemWidth(itemContext, info);
-            }
-        }
-
-        this.positionItemX(itemContext, info);
-    },
-
-    fitItemHeight: function (itemContext, info) {
-        var contentHeight, height;
-        if (info.ownerContext.heightModel.shrinkWrap) {
-            // contentHeight must include the margins to be consistent with setItemHeight
-            height = itemContext.getProp('height') + info.margins.height;
-            // because we add margins, height will be NaN or a number (not undefined)
-
-            contentHeight = info.contentHeight;
-            if (contentHeight === undefined) {
-                info.contentHeight = height;
-            } else {
-                info.contentHeight = Math.max(contentHeight, height);
-            }
-        } else if (itemContext.heightModel.calculated) {
-            ++info.needed;
-            if (info.targetSize.gotHeight) {
-                ++info.got;
-                this.setItemHeight(itemContext, info);
-            }
-        }
-
-        this.positionItemY(itemContext, info);
-    },
-
-    positionItemX: function (itemContext, info) {
-        var margins = info.margins;
-
-        // Adjust position to account for configured margins or if we have multiple items
-        // (all items should overlap):
-        if (info.index || margins.left) {
-            itemContext.setProp('x', margins.left);
-        }
-
-        if (margins.width) {
-            // Need the margins for shrink-wrapping but old IE sometimes collapses the left margin into the padding
-            itemContext.setProp('margin-right', margins.width);
-        }
-    },
-
-    positionItemY: function (itemContext, info) {
-        var margins = info.margins;
-
-        if (info.index || margins.top) {
-            itemContext.setProp('y', margins.top);
-        }
-
-        if (margins.height) {
-            // Need the margins for shrink-wrapping but old IE sometimes collapses the top margin into the padding
-            itemContext.setProp('margin-bottom', margins.height);
-        }
-    },
-
-    setItemHeight: function (itemContext, info) {
-        itemContext.setHeight(info.targetSize.height - info.margins.height);
-    },
-
-    setItemWidth: function (itemContext, info) {
-        itemContext.setWidth(info.targetSize.width - info.margins.width);
     }
 });
 

@@ -3,11 +3,12 @@ Ext.define('MyDesktop.App', {
     requires: 
         ['Ext.window.MessageBox',
         'Ext.form.Panel',
+        'Ext.data.reader.Json',
+        'Ext.data.Store',
         'Ext.ux.desktop.ShortcutModel',
         'Ext.ux.desktop.Desktop',
         'MyDesktop.SystemStatus',
         'MyDesktop.VideoWindow',
-        'MyDesktop.MatchesWindow',
         'MyDesktop.AboutTextWindow',
         'MyDesktop.Notepad',
         'MyDesktop.SimpleReader',
@@ -114,19 +115,23 @@ Ext.define('MyDesktop.App', {
                     }
                 }
 
-                window.regForm = MyDesktop.RegistrationForm;
-                window.regForm.update();
-                window.regForm.render(Ext.getBody());
-
-
-                window.loginForm = MyDesktop.LoginForm;
-                window.loginForm.update();
-                window.loginForm.render(Ext.getBody());
-        
-                if (window.userLogged) {
-                    myDesktopApp.init();
+                var isInitialized = window.regForm && window.loginForm;
+                if (!isInitialized) {
+                    window.regForm = MyDesktop.RegistrationForm;
+                    window.regForm.update();
+                    window.regForm.render(Ext.getBody());
+                    
+                    window.loginForm = MyDesktop.LoginForm;
+                    window.loginForm.update();
+                    window.loginForm.render(Ext.getBody());
+                    if (window.userLogged) {
+                        myDesktopApp.init();
+                    } else {
+                        window.loginForm.show();
+                    }
                 } else {
-                    window.loginForm.show();
+                    window.regForm.update();
+                    window.loginForm.update();
                 }
             })
         });
@@ -151,6 +156,7 @@ Ext.define('MyDesktop.App', {
             success: Ext.bind(function(response){
                 window.languagesArray = [];
                 window.languagesHash = {};
+                window.languagesNames = {};
                 if (response && response.responseXML && response.responseXML.childNodes) {
                     var root = response.responseXML.childNodes[Ext.isIE ? 1 : 0];
                     if (root && root.nodeName === 'root') {
@@ -160,6 +166,7 @@ Ext.define('MyDesktop.App', {
                             while (currentLanguageNode) {
                                 window.languagesArray.push(currentLanguageNode.nodeName);
                                 window.languagesHash[currentLanguageNode.nodeName] = 'present';
+                                window.languagesNames[currentLanguageNode.nodeName] = Ext.isIE ? currentLanguageNode.text : currentLanguageNode.textContent;
                                 currentLanguageNode = Ext.isIE ? currentLanguageNode.nextSibling : currentLanguageNode.nextElementSibling;
                             }
                         }
