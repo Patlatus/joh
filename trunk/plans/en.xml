@@ -16,6 +16,7 @@
 <reglabel>Register</reglabel>
 <alertmessage2>Take your head up</alertmessage2>
 <loglabel>Login</loglabel>
+<languagelabel>Language</languagelabel>
 <successfulloginmessage>You have successfully been logged</successfulloginmessage>
 <wronguserorpasswordmessage>The username or password you entered are not good.</wronguserorpasswordmessage>
 <successfulsignupmessage>You have successfully been signed up. You can now log in.</successfulsignupmessage>

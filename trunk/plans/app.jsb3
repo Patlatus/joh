@@ -990,16 +990,6 @@
                     "path": "src/form/field/"
                 },
                 {
-                    "clsName": "MyDesktop.Matches",
-                    "name": "Matches.js",
-                    "path": "desktop/"
-                },
-                {
-                    "clsName": "MyDesktop.MatchesWindow",
-                    "name": "MatchesWindow.js",
-                    "path": "desktop/"
-                },
-                {
                     "clsName": "Ext.ux.desktop.ShortcutModel",
                     "name": "ShortcutModel.js",
                     "path": "desktop/js/"
@@ -1033,6 +1023,11 @@
                     "clsName": "Ext.form.Panel",
                     "name": "Panel.js",
                     "path": "src/form/"
+                },
+                {
+                    "clsName": "Ext.layout.container.Fit",
+                    "name": "Fit.js",
+                    "path": "src/layout/container/"
                 },
                 {
                     "clsName": "MyDesktop.SimpleReader",
@@ -1128,11 +1123,6 @@
                     "clsName": "Ext.ux.desktop.Wallpaper",
                     "name": "Wallpaper.js",
                     "path": "desktop/js/"
-                },
-                {
-                    "clsName": "Ext.layout.container.Fit",
-                    "name": "Fit.js",
-                    "path": "src/layout/container/"
                 },
                 {
                     "clsName": "Ext.menu.Item",

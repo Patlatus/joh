@@ -16,6 +16,7 @@
 <reglabel>Зареєструватися</reglabel>
 <alertmessage2>поглянь тепер на форму для логування</alertmessage2>
 <loglabel>Залогуватися</loglabel>
+<languagelabel>Мова</languagelabel>
 <successfulloginmessage>Ви успішно залогувалися</successfulloginmessage>
 <wronguserorpasswordmessage>Помилка в імені користувача або в паролі.</wronguserorpasswordmessage>
 <successfulsignupmessage>Ви успішно зареєструвалися. Можете тепер залогуватися.</successfulsignupmessage>
