@@ -7,7 +7,6 @@ Ext.define('MyDesktop.SimpleReader', {
             window.username = result.username;
             window.userid = result.userid;
             window.resultMessage = result.message;
-            //window.currentLanguage = result.language || 'en';
         }
         return {
             success : result.success,

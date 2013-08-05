@@ -22,47 +22,43 @@ Ext.define('MyDesktop.App', {
     
     getDesktopConfig:function () {
         var me = this,ret = me.callParent();
-        return Ext.apply(ret,
-            {
-                contextMenuItems: [
-                    {
-                        text:window.changesettings || 'Змінити налаштування',
-                        handler:me.onSettings,
-                        scope:me
-                    }
-                ],
-                shortcuts:Ext.create('Ext.data.Store',{
-                    model:'Ext.ux.desktop.ShortcutModel',
-                    data: []
-                }),
-                wallpaper: 'wallpapers/isus-wallpaper.jpg',
-                wallpaperStretch:false
-            }
-        );
+        return Ext.apply(ret, {
+            contextMenuItems: [{
+                text:window.changesettings || 'Змінити налаштування',
+                handler:me.onSettings,
+                scope:me
+            }],
+            shortcuts: Ext.create('Ext.data.Store', {
+                model:'Ext.ux.desktop.ShortcutModel',
+                data: []
+            }),
+            wallpaper: 'wallpapers/isus-wallpaper.jpg',
+            wallpaperStretch:false
+        });
     },
     
     getStartConfig :function() {
-        var me = this,ret = me.callParent();
+        var me  = this,
+            ret = me.callParent();
         return Ext.apply(ret, {
-            title:window.username,
-            iconCls:'user',
-            height:300,
-            toolConfig:{
-                width:120,items:[
-                    {
-                        text:window.settings || 'Налаштування',
-                        iconCls:'settings',
-                        handler:me.onSettings,
-                        scope:me
-                    },
-                    '-',
-                    {
-                        text:(window.logoutlabel || 'Вийти'),
-                        iconCls:'logout',
-                        handler:me.onLogout,
-                        scope:me
-                    }
-                ]
+            title: window.username,
+            iconCls: 'user',
+            height: 300,
+            toolConfig: {
+                width: 120,
+                items: [{
+                    text:window.settings || 'Налаштування',
+                    iconCls:'settings',
+                    handler:me.onSettings,
+                    scope:me
+                },
+                '-',
+                {
+                    text:(window.logoutlabel || 'Вийти'),
+                    iconCls:'logout',
+                    handler:me.onLogout,
+                    scope:me
+                }]
             }
         });
     },
@@ -70,19 +66,15 @@ Ext.define('MyDesktop.App', {
     getTaskbarConfig:function () {
         var ret = this.callParent();
         return Ext.apply(ret, {
-            quickStart:[
-                {
-                    name:window.addnote || 'Додати запис',
-                    iconCls:'notepad',
-                    module:'notepad'
-                }
-            ],
-            trayItems:[
-                { 
-                    xtype:'trayclock',
-                    flex:1
-                }
-            ]
+            quickStart: [{
+                name:window.addnote || 'Додати запис',
+                iconCls:'notepad',
+                module:'notepad'
+            }],
+            trayItems:[{ 
+                xtype:'trayclock',
+                flex:1
+            }]
         });
     },
     
@@ -143,9 +135,14 @@ Ext.define('MyDesktop.App', {
     beforeinit : function () {
         window.settingsLoaded = false;
         window.userLoaded = false;
-        Ext.getBody().setStyle({
-            backgroundImage: 'url(wallpapers/isus-wallpaper.jpg)'
-        });
+        window.WallpaperManager = {
+            setWallpaper : function (url) {
+                Ext.getBody().setStyle({
+                    backgroundImage: ['url(',url,')'].join('')
+                });
+            }
+        };
+        WallpaperManager.setWallpaper('wallpapers/isus-wallpaper.jpg');
         Ext.Ajax.request({
             url: 'settings.xml',
             params: {
@@ -191,24 +188,16 @@ Ext.define('MyDesktop.App', {
                 }
                 window.userLoaded = true;
                 window.userLogged = decodedText.success;
-                window.currentLanguage = (window.navigator.systemLanguage || window.navigator.userLanguage || window.navigator.language || 'en').substr(0, 2);
+                window.currentLanguage = (window.navigator.userLanguage || window.navigator.systemLanguage || window.navigator.language || 'en').substr(0, 2);
                 if (decodedText.success) {
                     window.username = decodedText.username;
                     window.userid = decodedText.userid;
-                    //window.currentLanguage = decodedText.language || 'en';
-                    
-                    //alert((window.successtitle || 'success: ') + decodedText.message + '; user = ' + decodedText.username);
-                } else {
-                    //alert((window.successtitle || 'success: ') + decodedText.message);
-                    //window.currentLanguage = (window.navigator.systemLanguage || window.navigator.userLanguage || window.navigator.language || 'en').substr(0, 2);
-                    
                 }
                 if (window.settingsLoaded) {
                     myDesktopApp.updateUserLanguage();
                 }
             }, this)
         });
-
     },
     
     init : function () {
@@ -216,10 +205,20 @@ Ext.define('MyDesktop.App', {
         Ext.Msg.buttonText.yes = window.yes || 'Так';
         Ext.Msg.buttonText.no = window.no || 'Ні';
         
-        var dt = new Date();
-        var x = Ext.Date.format(dt, 'Y-m-d');
-            
-            
+        this.loadStickers('gn.php', window.userid, 0, 50, 'background-color:yellow;', {
+            showDuplicateButton : false,
+            showEditButton      : true,
+            showRemoveButton    : true
+        });
+        
+        this.loadStickers('gn.php', 'default', 200, 100, 'background-color:00ff00;', {
+            showDuplicateButton : true,
+            showEditButton      : false,
+            showRemoveButton    : false
+        });
+    },
+    
+    loadStickers : function (url, hashtag, defX, defYShift, bodyStyle, options) {
         var xStore = Ext.create('Ext.data.Store', {
             fields: [
                 {name: 'id', type: 'int'},
@@ -230,47 +229,11 @@ Ext.define('MyDesktop.App', {
                 {name: 'hashtag', type: 'string'}
             ],
             autoLoad: true
-
-            
-        });
-
-        Ext.Ajax.request({
-            url: 'gn.php',
-            params: {
-                hashtag: window.userid
-            },
-            success: Ext.bind(function(response){
-                var text = response.responseText;
-                try{
-                var decodedText = Ext.decode(text)
-                }
-                catch (e) {
-                    alert((window.alertmessage1 || 'Error during decoding text:') + '\n' + text);
-                }
-                this.write('text:\n'+text);
-                this.write('decodedText:\n'+decodedText);
-                xStore.loadData(decodedText);
-                
-                for (var i = 0; i < xStore.data.items.length; i++) {
-                    var data = xStore.data.items[i].data;
-                    if (data.x === null || data.x === undefined) {
-                        data.x = 0;
-                    }
-                    if (data.y === null || data.y === undefined) {
-                        data.y = i * 50;
-                    }
-                    this.getModule("notepad").showPanel(data, 'background-color:yellow;', {
-                        showDuplicateButton : false,
-                        showEditButton      : true,
-                        showRemoveButton    : true
-                    });
-                }
-            }, this)
         });
         Ext.Ajax.request({
-            url: 'gn.php',
+            url: url,
             params: {
-                hashtag: 'default'
+                hashtag: hashtag
             },
             success: Ext.bind(function(response){
                 var text = response.responseText;
@@ -288,16 +251,12 @@ Ext.define('MyDesktop.App', {
                 for (var i = 0; i < xStore.data.items.length; i++) {
                     var data = xStore.data.items[i].data;
                     if (data.x === null || data.x === undefined) {
-                        data.x = 200;
+                        data.x = defX;
                     }
                     if (data.y === null || data.y === undefined) {
-                        data.y = i * 100;
+                        data.y = i * defYShift;
                     }
-                    this.getModule("notepad").showPanel(data, 'background-color:00ff00;', {
-                        showDuplicateButton : true,
-                        showEditButton      : false,
-                        showRemoveButton    : false
-                    });
+                    this.getModule("notepad").showPanel(data, bodyStyle, options);
                 }
             }, this)
         });
