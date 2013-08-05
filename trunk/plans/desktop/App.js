@@ -93,7 +93,14 @@ Ext.define('MyDesktop.App', {
         if (window.languagesHash[window.currentLanguage] === 'present') {
             
         } else {
-            window.currentLanguage = 'en';
+            if (window.languagesArray.length > 0) {
+                this.write(["I'm sorry, but language ", window.currentLanguage, "isn't present in configured languages collection. Try to configure it or don't use browser which has not configured language"].join(''));
+                window.currentLanguage = window.languagesArray[0];
+            } else {
+                this.write("I'm sorry, but configured languages collection is empty. Try to configure it and add some languages nodes");
+                delete window.currentLanguage;
+                return;
+            }
         }
         Ext.Ajax.request({
             url: window.currentLanguage + '.xml',
@@ -137,7 +144,7 @@ Ext.define('MyDesktop.App', {
 
                     closable: false,
                     border: false,
-
+                    layout:'fit',
                     items: {
                         xtype: 'form',
                         bodyCls: 'x-window-body-default',
@@ -220,6 +227,7 @@ Ext.define('MyDesktop.App', {
                     hidden: true,
                     closable: false,
                     border: false,
+                    layout:'fit',
 
                     items: {
                         xtype: 'form',
