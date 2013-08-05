@@ -119,9 +119,9 @@ Ext.define('MyDesktop.App', {
                         if (result.success) {
                             window.username = result.username;
                             window.userid = result.userid;
+                            window.resultMessage = result.message;
                             //window.currentLanguage = result.language || 'en';
                         }
-                        Ext.Msg.alert(result.success?(window.successtitle || 'Success'):(window.failedtitle || 'Failed'), result.message);
                         return {
                             success : result.success,
                             records: []
@@ -129,144 +129,158 @@ Ext.define('MyDesktop.App', {
                     }
                 };
     
-                window.regForm = Ext.create('Ext.form.Panel', {
+                window.regForm = Ext.create('Ext.window.Window', {
                     title: (window.regformtitle || 'Реєстраційна форма'),//
-                    bodyPadding: 5,
                     width: 350,
 
-                    // The form will submit an AJAX request to this URL when submitted
-                    url: 'signup.php',
-                    
                     hidden: true,
 
-                    // Fields will be arranged vertically, stretched to full width
-                    layout: 'anchor',
-                    defaults: {
-                        anchor: '100%'
-                    },
-                    errorReader : MyReader,
+                    closable: false,
+                    border: false,
 
-                    // The fields
-                    defaultType: 'textfield',
-                    fieldDefaults: {
-                        labelWidth: 130,
-                        msgTarget : 'side'
-                    },
-                    items: [{
-                        fieldLabel: (window.usernamelabel || 'Юзернейм'),
-                        name: 'username',
-                        allowBlank: false
-                    },{
-                        fieldLabel: (window.passwordlabel || 'Пароль'),
-                        name: 'password',
-                        inputType: 'password',
-                        allowBlank: false
-                    },{
-                        fieldLabel: (window.passverlabel || 'Пароль(перевірка)'),
-                        name: 'passverif',
-                        inputType: 'password',
-                        allowBlank: false
-                    },{
-                        fieldLabel: (window.emaillabel || 'Електронна пошта'),
-                        name: 'email',
-                        vtype: 'email',
-                        allowBlank: false
-                    }],
+                    items: {
+                        xtype: 'form',
+                        bodyCls: 'x-window-body-default',
+                        // Fields will be arranged vertically, stretched to full width
+                        bodyPadding: 5,
+                        // The form will submit an AJAX request to this URL when submitted
+                        url: 'signup.php',
+                        
+                        layout: 'anchor',
+                        defaults: {
+                            anchor: '100%'
+                        },
+                        errorReader : MyReader,
 
-                    // Reset and Submit buttons
-                    buttons: [{
-                        text: (window.resetlabel || 'Очистити'),
-                        handler: function() {
-                            this.up('form').getForm().reset();
-                        }
-                    }, {
-                        text: (window.signuplabel || 'Зареєструватися'),
-                        formBind: true, //only enabled once the form is valid
-                        disabled: true,
-                        handler: function() {
-                            var form = this.up('form').getForm();
-                            if (form.isValid()) {
-                                form.submit({
-                                    params: {
-                                        language: window.currentLanguage
-                                    },
-                                
-                                    success: function(form, action) {
-                                        regForm.hide();
-                                        loginForm.show();
-                                       //Ext.Msg.alert('Success', action.result.msg);
-                                    },
-                                    failure: function(form, action) {
-                                        //Ext.Msg.alert('Failed', action.result.msg);
-                                    }
-                                });
+                        // The fields
+                        defaultType: 'textfield',
+                        fieldDefaults: {
+                            labelWidth: 130,
+                            msgTarget : 'side'
+                        },
+                        items: [{
+                            fieldLabel: (window.usernamelabel || 'Юзернейм'),
+                            name: 'username',
+                            allowBlank: false
+                        },{
+                            fieldLabel: (window.passwordlabel || 'Пароль'),
+                            name: 'password',
+                            inputType: 'password',
+                            allowBlank: false
+                        },{
+                            fieldLabel: (window.passverlabel || 'Пароль(перевірка)'),
+                            name: 'passverif',
+                            inputType: 'password',
+                            allowBlank: false
+                        },{
+                            fieldLabel: (window.emaillabel || 'Електронна пошта'),
+                            name: 'email',
+                            vtype: 'email',
+                            allowBlank: false
+                        }],
+
+                        // Reset and Submit buttons
+                        buttons: [{
+                            text: (window.resetlabel || 'Очистити'),
+                            handler: function() {
+                                this.up('form').getForm().reset();
                             }
-                        }
-                    }],
+                        }, {
+                            text: (window.signuplabel || 'Зареєструватися'),
+                            formBind: true, //only enabled once the form is valid
+                            disabled: true,
+                            handler: function() {
+                                var form = this.up('form').getForm();
+                                if (form.isValid()) {
+                                    form.submit({
+                                        params: {
+                                            language: window.currentLanguage
+                                        },
+                                    
+                                        success: function(form, action) {
+                                            regForm.hide();
+                                            Ext.Msg.alert((window.successtitle || 'Success'), window.resultMessage, function() {loginForm.show()}, loginForm);
+                                        },
+                                        failure: function(form, action) {
+                                            Ext.Msg.alert((window.failedtitle || 'Failed'), window.resultMessage);
+                                        }
+                                    });
+                                }
+                            }
+                        }]
+                    },
                     renderTo: Ext.getBody()
                 });
 
 
-                window.loginForm = Ext.create('Ext.form.Panel', {
+                window.loginForm = Ext.create('Ext.window.Window', {
                     title: (window.logformtitle || 'Форма логування'),//
-                    bodyPadding: 5,
                     width: 200,
 
-                    // The form will submit an AJAX request to this URL when submitted
-                    url: 'login.php',
                     hidden: true,
-                    // Fields will be arranged vertically, stretched to full width
-                    layout: 'anchor',
-                    defaults: {
-                        anchor: '100%'
-                    },
-                    errorReader : MyReader,
+                    closable: false,
+                    border: false,
 
-                    defaultType: 'textfield',
-                    fieldDefaults: {
-                        labelWidth: 80,
-                        msgTarget : 'side'
-                    },
-                    items: [{
-                        fieldLabel: (window.usernamelabel || 'Юзернейм'),
-                        name: 'username',
-                        allowBlank: false
-                    },{
-                        fieldLabel: (window.passwordlabel || 'Пароль'),
-                        name: 'password',
-                        inputType: 'password',
-                        allowBlank: false
-                    }],
-                    // Reset and Submit buttons
-                    buttons: [{
-                        text: (window.reglabel || 'Зареєструватися'),
-                        handler: function() {
-                            loginForm.hide();
-                            regForm.show();
-                            //alert(window.alertmessage2 || 'поглянь тепер на форму для логування');//this.up('form').getForm().reset();
-                        }
-                    }, {
-                        text: (window.loglabel || 'Login'),
-                        formBind: true, //only enabled once the form is valid
-                        disabled: true,
-                        handler: function() {
-                            var form = this.up('form').getForm();
-                            if (form.isValid()) {
-                                form.submit({
-                                    params: {
-                                        language: window.currentLanguage
-                                    },
-                                    success: function(form, action) {
-                                        loginForm.hide();
-                                        myDesktopApp.init();
-                                    },
-                                    failure: function(form, action) {
-                                        //Ext.Msg.alert('Failed', action.result.msg);
-                                    }
-                                });
+                    items: {
+                        xtype: 'form',
+                        bodyCls : 'x-window-body-default',
+                        bodyPadding: 5,
+                        // The form will submit an AJAX request to this URL when submitted
+                        url: 'login.php',
+                        // Fields will be arranged vertically, stretched to full width
+                        layout: 'anchor',
+                        defaults: {
+                            anchor: '100%'
+                        },
+                        errorReader : MyReader,
+
+                        defaultType: 'textfield',
+                        fieldDefaults: {
+                            labelWidth: 80,
+                            msgTarget : 'side'
+                        },
+                        items: [{
+                            fieldLabel: (window.usernamelabel || 'Юзернейм'),
+                            name: 'username',
+                            allowBlank: false
+                        },{
+                            fieldLabel: (window.passwordlabel || 'Пароль'),
+                            name: 'password',
+                            inputType: 'password',
+                            allowBlank: false
+                        }],
+                        // Reset and Submit buttons
+                        buttons: [{
+                            text: (window.reglabel || 'Зареєструватися'),
+                            handler: function() {
+                                loginForm.hide();
+                                regForm.show();
+                                //alert(window.alertmessage2 || 'поглянь тепер на форму для логування');//this.up('form').getForm().reset();
                             }
-                        }
-                    }],
+                        }, {
+                            text: (window.loglabel || 'Login'),
+                            formBind: true, //only enabled once the form is valid
+                            disabled: true,
+                            handler: function() {
+                                var form = this.up('form').getForm();
+                                if (form.isValid()) {
+                                    form.submit({
+                                        params: {
+                                            language: window.currentLanguage
+                                        },
+                                        success: function(form, action) {
+                                            loginForm.hide();
+                                            Ext.Msg.alert((window.successtitle || 'Success'), window.resultMessage);
+                                            myDesktopApp.init();
+                                        },
+                                        failure: function(form, action) {
+                                            Ext.Msg.alert((window.failedtitle || 'Failed'), window.resultMessage);
+                                        }
+                                    });
+                                }
+                            }
+                        }],
+                    },
                     renderTo: Ext.getBody()
                 });
         
@@ -282,7 +296,9 @@ Ext.define('MyDesktop.App', {
     beforeinit : function () {
         window.settingsLoaded = false;
         window.userLoaded = false;
-        
+        Ext.getBody().setStyle({
+            backgroundImage: 'url(wallpapers/isus-wallpaper.jpg)'
+        });
         Ext.Ajax.request({
             url: 'settings.xml',
             params: {
