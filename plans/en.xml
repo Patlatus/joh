@@ -8,6 +8,7 @@
 <passwordlabel>Password</passwordlabel>
 <passverlabel>Password(verification)</passverlabel>
 <emaillabel>Email Address</emaillabel>
+<backlabel>Back</backlabel>
 <resetlabel>Reset</resetlabel>
 <signuplabel>Sign Up</signuplabel>
 <logoutlabel>Logout</logoutlabel>

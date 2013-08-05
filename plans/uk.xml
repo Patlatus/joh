@@ -8,6 +8,7 @@
 <passwordlabel>Пароль</passwordlabel>
 <passverlabel>Пароль(перевірка)</passverlabel>
 <emaillabel>Електронна пошта</emaillabel>
+<backlabel>Назад</backlabel>
 <resetlabel>Очистити</resetlabel>
 <signuplabel>Зареєструвати</signuplabel>
 <logoutlabel>Вилогуватися</logoutlabel>
