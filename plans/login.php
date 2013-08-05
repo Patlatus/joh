@@ -63,9 +63,6 @@ if(isset($message))
 {
 	echo '{success:false,message:"'.$message.'"}';
 }
-
-$nb_new_pm = mysql_fetch_array(mysql_query('select count(*) as nb_new_pm from pm where ((user1="'.$_SESSION['userid'].'" and user1read="no") or (user2="'.$_SESSION['userid'].'" and user2read="no")) and id2="1"'));
-$nb_new_pm = $nb_new_pm['nb_new_pm'];
 	}
 }
 ?>
