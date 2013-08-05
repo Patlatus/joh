@@ -37,12 +37,12 @@ Ext.define('MyDesktop.RegistrationForm', {
         items: [{
             fieldLabel: (window.usernamelabel || 'Юзернейм'),
             id:'run',
-            name: 'username',
+            name: 'rusername',
             allowBlank: false
         },{
             fieldLabel: (window.passwordlabel || 'Пароль'),
             id:'rpw',
-            name: 'password',
+            name: 'rpassword',
             inputType: 'password',
             allowBlank: false
         },{

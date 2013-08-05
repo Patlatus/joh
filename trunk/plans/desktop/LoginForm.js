@@ -51,7 +51,6 @@ Ext.define('MyDesktop.LoginForm', {
             handler: function() {
                 loginForm.hide();
                 regForm.show();
-                //alert(window.alertmessage2 || 'поглянь тепер на форму для логування');//this.up('form').getForm().reset();
             }
         }, {
             text: (window.loglabel || 'Залогуватися'),
