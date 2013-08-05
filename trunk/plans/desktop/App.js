@@ -10,6 +10,9 @@ Ext.define('MyDesktop.App', {
         'MyDesktop.MatchesWindow',
         'MyDesktop.AboutTextWindow',
         'MyDesktop.Notepad',
+        'MyDesktop.SimpleReader',
+        'MyDesktop.RegistrationForm',
+        'MyDesktop.LoginForm',
         'MyDesktop.Settings'],
     getModules : function(){
         return [
@@ -94,7 +97,7 @@ Ext.define('MyDesktop.App', {
             
         } else {
             if (window.languagesArray.length > 0) {
-                this.write(["I'm sorry, but language ", window.currentLanguage, "isn't present in configured languages collection. Try to configure it or don't use browser which has not configured language"].join(''));
+                this.write(["I'm sorry, but language '", window.currentLanguage, "' isn't present in configured languages collection. Try to configure it or don't use browser which has not configured language"].join(''));
                 window.currentLanguage = window.languagesArray[0];
             } else {
                 this.write("I'm sorry, but configured languages collection is empty. Try to configure it and add some languages nodes");
@@ -119,178 +122,14 @@ Ext.define('MyDesktop.App', {
                     }
                 }
 
-                MyReader = {
-                    read : function (xhr) {
-                        var result = Ext.decode(xhr.responseText);
-                        window.userLogged = result.success;
-                        if (result.success) {
-                            window.username = result.username;
-                            window.userid = result.userid;
-                            window.resultMessage = result.message;
-                            //window.currentLanguage = result.language || 'en';
-                        }
-                        return {
-                            success : result.success,
-                            records: []
-                        }
-                    }
-                };
-    
-                window.regForm = Ext.create('Ext.window.Window', {
-                    title: (window.regformtitle || 'Реєстраційна форма'),//
-                    width: 350,
-
-                    hidden: true,
-
-                    closable: false,
-                    border: false,
-                    layout:'fit',
-                    items: {
-                        xtype: 'form',
-                        bodyCls: 'x-window-body-default',
-                        // Fields will be arranged vertically, stretched to full width
-                        bodyPadding: 5,
-                        // The form will submit an AJAX request to this URL when submitted
-                        url: 'signup.php',
-                        
-                        layout: 'anchor',
-                        defaults: {
-                            anchor: '100%'
-                        },
-                        errorReader : MyReader,
-
-                        // The fields
-                        defaultType: 'textfield',
-                        fieldDefaults: {
-                            labelWidth: 130,
-                            msgTarget : 'side'
-                        },
-                        items: [{
-                            fieldLabel: (window.usernamelabel || 'Юзернейм'),
-                            name: 'username',
-                            allowBlank: false
-                        },{
-                            fieldLabel: (window.passwordlabel || 'Пароль'),
-                            name: 'password',
-                            inputType: 'password',
-                            allowBlank: false
-                        },{
-                            fieldLabel: (window.passverlabel || 'Пароль(перевірка)'),
-                            name: 'passverif',
-                            inputType: 'password',
-                            allowBlank: false
-                        },{
-                            fieldLabel: (window.emaillabel || 'Електронна пошта'),
-                            name: 'email',
-                            vtype: 'email',
-                            allowBlank: false
-                        }],
-
-                        // Reset and Submit buttons
-                        buttons: [{
-                            text: (window.resetlabel || 'Очистити'),
-                            handler: function() {
-                                this.up('form').getForm().reset();
-                            }
-                        }, {
-                            text: (window.signuplabel || 'Зареєструватися'),
-                            formBind: true, //only enabled once the form is valid
-                            disabled: true,
-                            handler: function() {
-                                var form = this.up('form').getForm();
-                                if (form.isValid()) {
-                                    form.submit({
-                                        params: {
-                                            language: window.currentLanguage
-                                        },
-                                    
-                                        success: function(form, action) {
-                                            regForm.hide();
-                                            Ext.Msg.alert((window.successtitle || 'Success'), window.resultMessage, function() {loginForm.show()}, loginForm);
-                                        },
-                                        failure: function(form, action) {
-                                            Ext.Msg.alert((window.failedtitle || 'Failed'), window.resultMessage);
-                                        }
-                                    });
-                                }
-                            }
-                        }]
-                    },
-                    renderTo: Ext.getBody()
-                });
+                window.regForm = MyDesktop.RegistrationForm;
+                window.regForm.update();
+                window.regForm.render(Ext.getBody());
 
 
-                window.loginForm = Ext.create('Ext.window.Window', {
-                    title: (window.logformtitle || 'Форма логування'),//
-                    width: 200,
-
-                    hidden: true,
-                    closable: false,
-                    border: false,
-                    layout:'fit',
-
-                    items: {
-                        xtype: 'form',
-                        bodyCls : 'x-window-body-default',
-                        bodyPadding: 5,
-                        // The form will submit an AJAX request to this URL when submitted
-                        url: 'login.php',
-                        // Fields will be arranged vertically, stretched to full width
-                        layout: 'anchor',
-                        defaults: {
-                            anchor: '100%'
-                        },
-                        errorReader : MyReader,
-
-                        defaultType: 'textfield',
-                        fieldDefaults: {
-                            labelWidth: 80,
-                            msgTarget : 'side'
-                        },
-                        items: [{
-                            fieldLabel: (window.usernamelabel || 'Юзернейм'),
-                            name: 'username',
-                            allowBlank: false
-                        },{
-                            fieldLabel: (window.passwordlabel || 'Пароль'),
-                            name: 'password',
-                            inputType: 'password',
-                            allowBlank: false
-                        }],
-                        // Reset and Submit buttons
-                        buttons: [{
-                            text: (window.reglabel || 'Зареєструватися'),
-                            handler: function() {
-                                loginForm.hide();
-                                regForm.show();
-                                //alert(window.alertmessage2 || 'поглянь тепер на форму для логування');//this.up('form').getForm().reset();
-                            }
-                        }, {
-                            text: (window.loglabel || 'Login'),
-                            formBind: true, //only enabled once the form is valid
-                            disabled: true,
-                            handler: function() {
-                                var form = this.up('form').getForm();
-                                if (form.isValid()) {
-                                    form.submit({
-                                        params: {
-                                            language: window.currentLanguage
-                                        },
-                                        success: function(form, action) {
-                                            loginForm.hide();
-                                            Ext.Msg.alert((window.successtitle || 'Success'), window.resultMessage);
-                                            myDesktopApp.init();
-                                        },
-                                        failure: function(form, action) {
-                                            Ext.Msg.alert((window.failedtitle || 'Failed'), window.resultMessage);
-                                        }
-                                    });
-                                }
-                            }
-                        }],
-                    },
-                    renderTo: Ext.getBody()
-                });
+                window.loginForm = MyDesktop.LoginForm;
+                window.loginForm.update();
+                window.loginForm.render(Ext.getBody());
         
                 if (window.userLogged) {
                     myDesktopApp.init();

@@ -1035,6 +1035,21 @@
                     "path": "src/form/"
                 },
                 {
+                    "clsName": "MyDesktop.SimpleReader",
+                    "name": "SimpleReader.js",
+                    "path": "desktop/"
+                },
+                {
+                    "clsName": "MyDesktop.RegistrationForm",
+                    "name": "RegistrationForm.js",
+                    "path": "desktop/"
+                },
+                {
+                    "clsName": "MyDesktop.LoginForm",
+                    "name": "LoginForm.js",
+                    "path": "desktop/"
+                },
+                {
                     "clsName": "MyDesktop.App",
                     "name": "App.js",
                     "path": "desktop/"
