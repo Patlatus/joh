@@ -7,7 +7,58 @@ $log = new Logging();
 $log->lfile('mylog.txt');
 
 // write message to the log file
-$log->lwrite("AddStick php called");
+$log->lwrite("Initializing php called");
+
+function updateLastActivity($lg) {
+    $sql = 'update users set last_activity = '.time().' where id = '.$_SESSION['userid'];
+    $lg->lwrite('sql='.$sql);
+    if (mysql_query($sql)) {
+        $lg->lwrite('Sql, success:true');
+    } else {
+        $lg->lwrite('Sql has failed: '.$sql);
+    }
+};
+
+function updateUser($lg, $status) {
+    $sql = 'update users set status = '.$status.' where id = '.$_SESSION['userid'];
+    $lg->lwrite('sql='.$sql);
+    if (mysql_query($sql)) {
+        $lg->lwrite('Sql, success:true');
+    } else {
+        $lg->lwrite('Sql has failed: '.$sql);
+    }
+    updateLastActivity($lg);
+};
+
+function auditEvent($lg, $userid, $username, $event, $language) {
+    $sql = "insert into audit(userid, username, event, time, language) values (".$userid.', "'.$username.'", "'.$event.'", '.time().', "'.$language.'")';
+    $lg->lwrite('sql='.$sql);
+    if (mysql_query($sql)) {
+        $lg->lwrite('Sql, success:true');
+    } else {
+        $lg->lwrite('Sql has failed: '.$sql);
+    }
+};
+
+function auditFailedLogin($lg, $username, $password, $language) {
+    $sql = "insert into failedlogins(username, password, time, language) values ('".$username."', '".$password."'".time().', "'.$language.'")';
+    $lg->lwrite('sql='.$sql);
+    if (mysql_query($sql)) {
+        $lg->lwrite('Sql, success:true');
+    } else {
+        $lg->lwrite('Sql has failed: '.$sql);
+    }
+}
+
+function auditFailedSignup($lg, $username, $password, $passver, $email, $language) {
+    $sql = "insert into failedsignups(username, password, passver, email, time, language) values ('".$username."', '".$password."', '".$passver."', '".$email."'".time().', "'.$language.'")';
+    $lg->lwrite('sql='.$sql);
+    if (mysql_query($sql)) {
+        $lg->lwrite('Sql, success:true');
+    } else {
+        $lg->lwrite('Sql has failed: '.$sql);
+    }
+}
 
 $con = mysql_connect($dbhost, $dblogin, $dbpass);
     if (!$con)
@@ -17,19 +68,9 @@ $con = mysql_connect($dbhost, $dblogin, $dbpass);
     $log->lwrite('Could not connect: ' . mysql_error());
     $log->lclose();
       }
-	  $log->lwrite('Try to select db: ' . $dbname);
+      $log->lwrite('Try to select db: ' . $dbname);
 mysql_select_db($dbname, $con);
 
 session_start();
 header('Content-type: text/html;charset=UTF-8');
-if(!isset($_SESSION['username']) and isset($_COOKIE['planssiteusername'], $_COOKIE['planssitepassword']))
-{
-	$cnn = mysql_query('select password,id from users where username="'.mysql_real_escape_string($_COOKIE['planssiteusername']).'"');
-	$dn_cnn = mysql_fetch_array($cnn);
-	if(sha1($dn_cnn['password'])==$_COOKIE['planssitepassword'] and mysql_num_rows($cnn)>0)
-	{
-		$_SESSION['username'] = $_COOKIE['planssiteusername'];
-		$_SESSION['userid'] = $dn_cnn['id'];
-	}
-}
 ?>
