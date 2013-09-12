@@ -57,6 +57,7 @@ Ext.define('MyDesktop.App', {
                 {
                     text:(window.logoutlabel || 'Вийти'),
                     iconCls:'logout',
+                    disabled : !window.lsEnabled,
                     handler:me.onLogout,
                     scope:me
                 }]
@@ -65,13 +66,14 @@ Ext.define('MyDesktop.App', {
     },
     
     getTaskbarConfig:function () {
-        var ret = this.callParent();
-        return Ext.apply(ret, {
-            quickStart: [{
+        var ret = this.callParent(),
+            qs  = window.lsEnabled ? [{
                 name:window.addnote || 'Додати запис',
                 iconCls:'notepad',
                 module:'notepad'
-            }],
+            }] : [];
+        return Ext.apply(ret, {
+            quickStart: qs,
             trayItems:[{ 
                 xtype:'trayclock',
                 flex:1
@@ -114,7 +116,10 @@ Ext.define('MyDesktop.App', {
                         }
                     }
                 }
-
+                if (!window.lsEnabled) {
+                    myDesktopApp.init();
+                    return;
+                }
                 var isInitialized = window.regForm && window.loginForm;
                 if (!isInitialized) {
                     window.regForm = MyDesktop.RegistrationForm;
@@ -158,9 +163,7 @@ Ext.define('MyDesktop.App', {
                 window.languagesHash = {};
                 window.languagesNames = {};
                 if (response && response.responseXML && response.responseXML.childNodes) {
-                    var root = response.responseXML.childNodes[Ext.isIE ? 1 : 0];
-                    if (root && root.nodeName === 'root') {
-                        var languages = Ext.isIE ? root.firstChild : root.firstElementChild;
+                    var languages = response.responseXML.getElementsByTagName("languages")[0];
                         if (languages && languages.nodeName === 'languages') {
                             currentLanguageNode = Ext.isIE ? languages.firstChild : languages.firstElementChild;
                             while (currentLanguageNode) {
@@ -170,6 +173,55 @@ Ext.define('MyDesktop.App', {
                                 currentLanguageNode = Ext.isIE ? currentLanguageNode.nextSibling : currentLanguageNode.nextElementSibling;
                             }
                         }
+                    var loginsignup = response.responseXML.getElementsByTagName("loginsignup")[0];
+                    window.lsEnabled = true;
+                    if (loginsignup && loginsignup.nodeName === "loginsignup") {
+                        var lsValue = (Ext.isIE ? loginsignup.text : loginsignup.textContent)
+                        window.lsEnabled = (lsValue === 'on' || lsValue === 'yes');
+                    }
+                    var apps = response.responseXML.getElementsByTagName("apps")[0];
+                    window.appsArray = [];
+                    window.appsHash = {};
+                    window.stickersEnabled = true;
+                    if (apps && apps.nodeName === "apps") {
+                        currentAppNode = Ext.isIE ? apps.firstChild : apps.firstElementChild;
+                        while (currentAppNode) {
+                            window.appsArray.push(currentAppNode.nodeName);
+                            window.appsHash[currentAppNode.nodeName] = Ext.isIE ? currentAppNode.text : currentAppNode.textContent;
+                            currentAppNode = Ext.isIE ? currentAppNode.nextSibling : currentAppNode.nextElementSibling;
+                        }
+                        var stickersValue = window.appsHash['stickers'];
+                        window.stickersEnabled = (stickersValue === 'on' || stickersValue === 'yes');
+                    }
+                    window.currentLanguage = (window.navigator.userLanguage || window.navigator.systemLanguage || window.navigator.language || 'en').substr(0, 2);
+                    if (window.lsEnabled) {
+                        Ext.Ajax.request({
+                            url: 'cl.php',
+                            params: {
+                                
+                            },
+                            success: Ext.bind(function(response){
+                                var text = response.responseText;
+                                try{
+                                var decodedText = Ext.decode(text)
+                                }
+                                catch (e) {
+                                    alert((window.alertmessage1 || 'Error during decoding text:') + '\n' + text);
+                                }
+                                window.userLoaded = true;
+                                window.userLogged = decodedText.success;
+                                
+                                if (decodedText.success) {
+                                    window.username = decodedText.username;
+                                    window.userid = decodedText.userid;
+                                }
+                                if (window.settingsLoaded) {
+                                    myDesktopApp.updateUserLanguage();
+                                }
+                            }, this)
+                        });
+                    } else {
+                        window.userLoaded = true;
                     }
                 }
                 window.settingsLoaded = true;
@@ -180,49 +232,27 @@ Ext.define('MyDesktop.App', {
             }, this)
         });
         
-        Ext.Ajax.request({
-            url: 'cl.php',
-            params: {
-                
-            },
-            success: Ext.bind(function(response){
-                var text = response.responseText;
-                try{
-                var decodedText = Ext.decode(text)
-                }
-                catch (e) {
-                    alert((window.alertmessage1 || 'Error during decoding text:') + '\n' + text);
-                }
-                window.userLoaded = true;
-                window.userLogged = decodedText.success;
-                window.currentLanguage = (window.navigator.userLanguage || window.navigator.systemLanguage || window.navigator.language || 'en').substr(0, 2);
-                if (decodedText.success) {
-                    window.username = decodedText.username;
-                    window.userid = decodedText.userid;
-                }
-                if (window.settingsLoaded) {
-                    myDesktopApp.updateUserLanguage();
-                }
-            }, this)
-        });
+        
     },
     
     init : function () {
         this.callParent(arguments);
         Ext.Msg.buttonText.yes = window.yes || 'Так';
         Ext.Msg.buttonText.no = window.no || 'Ні';
-        
-        this.loadStickers('gn.php', window.userid, 0, 50, 'background-color:yellow;', {
-            showDuplicateButton : false,
-            showEditButton      : true,
-            showRemoveButton    : true
-        });
-        
-        this.loadStickers('gn.php', 'default', 200, 100, 'background-color:00ff00;', {
-            showDuplicateButton : true,
-            showEditButton      : false,
-            showRemoveButton    : false
-        });
+        if (window.lsEnabled && window.stickersEnabled) {
+            this.loadStickers('gn.php', window.userid, 0, 50, 'background-color:yellow;', {
+                showDuplicateButton : false,
+                showEditButton      : true,
+                showRemoveButton    : true
+            });
+        }
+        if (window.lsEnabled && window.stickersEnabled) {
+            this.loadStickers('gn.php', 'default', 200, 100, 'background-color:00ff00;', {
+                showDuplicateButton : true,
+                showEditButton      : false,
+                showRemoveButton    : false
+            });
+        }
     },
     
     loadStickers : function (url, hashtag, defX, defYShift, bodyStyle, options) {
