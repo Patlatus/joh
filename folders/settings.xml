@@ -4,4 +4,8 @@
 <en>English</en>
 <uk>Українська</uk>
 </languages>
+<loginsignup>off</loginsignup>
+<apps>
+<stickers>off</stickers>
+</apps>
 </root>

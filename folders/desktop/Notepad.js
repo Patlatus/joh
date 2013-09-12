@@ -15,10 +15,10 @@ Ext.define('MyDesktop.Notepad', {
     id:'notepad',
 
     init : function(){
-        this.launcher = {
+        this.launcher = window.lsEnabled ? {
             text: window.addnote || 'Додати запис',
             iconCls:'notepad'
-        }
+        } : null;
     },
     
     ps : function (s) {
