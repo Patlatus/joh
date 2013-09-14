@@ -15,7 +15,7 @@ Ext.define('MyDesktop.Notepad', {
     id:'notepad',
 
     init : function(){
-        this.launcher = window.lsEnabled ? {
+        this.launcher = (window.lsEnabled && !window.guestmode) ? {
             text: window.addnote || 'Додати запис',
             iconCls:'notepad'
         } : null;
