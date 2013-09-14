@@ -67,7 +67,7 @@ Ext.define('MyDesktop.App', {
     
     getTaskbarConfig:function () {
         var ret = this.callParent(),
-            qs  = window.lsEnabled ? [{
+            qs  = window.lsEnabled && !window.guestmode ? [{
                 name:window.addnote || 'Додати запис',
                 iconCls:'notepad',
                 module:'notepad'
@@ -87,6 +87,18 @@ Ext.define('MyDesktop.App', {
         }
     },
     
+    getQueryVariable : function (variable) {
+        var query = window.location.search.substring(1);
+        var vars = query.split("&");
+        for (var i=0;i<vars.length;i++) {
+            var pair = vars[i].split("=");
+            if (pair[0] == variable) {
+                return pair[1];
+            }
+        } 
+        return null;
+    },
+
     updateUserLanguage : function () {
         if (window.languagesHash[window.currentLanguage] === 'present') {
             
@@ -120,6 +132,9 @@ Ext.define('MyDesktop.App', {
                     myDesktopApp.init();
                     return;
                 }
+                if (window.guestmode) {
+                    window.username = window['guestmodetitle'] || 'Guest mode';
+                }
                 var isInitialized = window.regForm && window.loginForm;
                 if (!isInitialized) {
                     window.regForm = MyDesktop.RegistrationForm;
@@ -129,7 +144,7 @@ Ext.define('MyDesktop.App', {
                     window.loginForm = MyDesktop.LoginForm;
                     window.loginForm.update();
                     window.loginForm.render(Ext.getBody());
-                    if (window.userLogged) {
+                    if (window.userLogged || (window.guestmodeallowed && window.guestmode)) {
                         myDesktopApp.init();
                     } else {
                         window.loginForm.show();
@@ -138,7 +153,7 @@ Ext.define('MyDesktop.App', {
                     window.regForm.update();
                     window.loginForm.update();
                 }
-            })
+            }, this)
         });
     },
         
@@ -164,20 +179,33 @@ Ext.define('MyDesktop.App', {
                 window.languagesNames = {};
                 if (response && response.responseXML && response.responseXML.childNodes) {
                     var languages = response.responseXML.getElementsByTagName("languages")[0];
-                        if (languages && languages.nodeName === 'languages') {
-                            currentLanguageNode = Ext.isIE ? languages.firstChild : languages.firstElementChild;
-                            while (currentLanguageNode) {
-                                window.languagesArray.push(currentLanguageNode.nodeName);
-                                window.languagesHash[currentLanguageNode.nodeName] = 'present';
-                                window.languagesNames[currentLanguageNode.nodeName] = Ext.isIE ? currentLanguageNode.text : currentLanguageNode.textContent;
-                                currentLanguageNode = Ext.isIE ? currentLanguageNode.nextSibling : currentLanguageNode.nextElementSibling;
-                            }
+                    if (languages && languages.nodeName === 'languages') {
+                        currentLanguageNode = Ext.isIE ? languages.firstChild : languages.firstElementChild;
+                        while (currentLanguageNode) {
+                            window.languagesArray.push(currentLanguageNode.nodeName);
+                            window.languagesHash[currentLanguageNode.nodeName] = 'present';
+                            window.languagesNames[currentLanguageNode.nodeName] = Ext.isIE ? currentLanguageNode.text : currentLanguageNode.textContent;
+                            currentLanguageNode = Ext.isIE ? currentLanguageNode.nextSibling : currentLanguageNode.nextElementSibling;
                         }
+                    }
                     var loginsignup = response.responseXML.getElementsByTagName("loginsignup")[0];
                     window.lsEnabled = true;
                     if (loginsignup && loginsignup.nodeName === "loginsignup") {
                         var lsValue = (Ext.isIE ? loginsignup.text : loginsignup.textContent)
                         window.lsEnabled = (lsValue === 'on' || lsValue === 'yes');
+                    }
+                    var allowguestmode = response.responseXML.getElementsByTagName("allowguestmode")[0];
+                    window.guestmodeallowed = false;
+                    if (allowguestmode && allowguestmode.nodeName === "allowguestmode") {
+                        var gmaValue = (Ext.isIE ? allowguestmode.text : allowguestmode.textContent)
+                        window.guestmodeallowed = (gmaValue === 'on' || gmaValue === 'yes');
+                    }
+                    window.guestmode = false;
+                    if (window.guestmodeallowed) {
+                        var gValue = this.getQueryVariable('guest');
+                        if (gValue === 'true' || gValue === 'on' || gValue === 'yes') {
+                            window.guestmode = true;
+                        }
                     }
                     var apps = response.responseXML.getElementsByTagName("apps")[0];
                     window.appsArray = [];
@@ -194,7 +222,7 @@ Ext.define('MyDesktop.App', {
                         window.stickersEnabled = (stickersValue === 'on' || stickersValue === 'yes');
                     }
                     window.currentLanguage = (window.navigator.userLanguage || window.navigator.systemLanguage || window.navigator.language || 'en').substr(0, 2);
-                    if (window.lsEnabled) {
+                    if (window.lsEnabled && !window.guestmode) {
                         Ext.Ajax.request({
                             url: 'cl.php',
                             params: {

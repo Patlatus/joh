@@ -41,4 +41,5 @@
 <yes>Yes</yes>
 <no>No</no>
 <start>Start</start>
+<guestmodetitle>{[(Guest mode}])</guestmodetitle>
 </root>

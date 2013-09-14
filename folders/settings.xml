@@ -4,7 +4,8 @@
 <en>English</en>
 <uk>Українська</uk>
 </languages>
-<loginsignup>off</loginsignup>
+<loginsignup>on</loginsignup>
+<allowguestmode>on</allowguestmode>
 <apps>
 <stickers>off</stickers>
 </apps>

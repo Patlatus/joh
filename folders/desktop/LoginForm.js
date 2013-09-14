@@ -46,6 +46,12 @@ Ext.define('MyDesktop.LoginForm', {
             inputType: 'password',
             allowBlank: false
         },{
+            fieldLabel: (window.guestmodelabel || 'Як гість'),
+            id: 'guestmode',
+            name: 'guestmode',
+            xtype: 'checkbox',
+            visible: window.guestmodeallowed
+        },{
             fieldLabel: (window.languagelabel || 'Мова'),
             id: 'language',
             name: 'language',
@@ -74,6 +80,11 @@ Ext.define('MyDesktop.LoginForm', {
             disabled: true,
             handler: function() {
                 var form = this.up('form').getForm();
+                if (window.guestmode) {
+                    loginForm.hide();
+                    myDesktopApp.init();
+                    return;
+                };
                 if (form.isValid()) {
                     form.submit({
                         params: {
@@ -99,6 +110,8 @@ Ext.define('MyDesktop.LoginForm', {
         Ext.getCmp('password').setFieldLabel(window.passwordlabel || 'Пароль');
         Ext.getCmp('regbutton').setText(window.reglabel || 'Зареєструватися');
         Ext.getCmp('logbutton').setText(window.loglabel || 'Залогуватися');
+        Ext.getCmp('guestmode').setVisible(window.guestmodeallowed);
+        Ext.getCmp('guestmode').on('change', this.guestModeChange, this);
         this.languageCombo = Ext.getCmp('language');
         this.languageCombo.setFieldLabel(window.languagelabel || 'Мова');
         var data = [];
@@ -113,6 +126,12 @@ Ext.define('MyDesktop.LoginForm', {
             this.languageCombo.setValue(currentLanguage);
             this.languageCombo.on('change', this.languageChange, this);
         }
+    },
+    
+    guestModeChange : function (field, newValue, oldValue, opts) {
+        Ext.getCmp('username').setDisabled(newValue);
+        Ext.getCmp('password').setDisabled(newValue);
+        window.guestmode = newValue;
     },
     
     languageChange : function (field, newValue, oldValue, opts) {
