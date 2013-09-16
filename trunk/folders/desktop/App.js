@@ -136,6 +136,9 @@ Ext.define('MyDesktop.App', {
                 if (window.guestmode) {
                     window.username = window['guestmodetitle'] || 'Guest mode';
                 }
+                if (window.doctitle) {
+                    document.title = window.doctitle;
+                }
                 var isInitialized = window.regForm && window.loginForm;
                 if (!isInitialized) {
                     window.regForm = MyDesktop.RegistrationForm;
