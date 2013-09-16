@@ -4,6 +4,7 @@ Ext.define('MyDesktop.App', {
         ['Ext.window.MessageBox',
         'Ext.form.Panel',
         'Ext.data.reader.Json',
+        'Ext.form.field.Checkbox',
         'Ext.data.Store',
         'Ext.ux.desktop.ShortcutModel',
         'Ext.ux.desktop.Desktop',
