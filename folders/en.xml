@@ -41,5 +41,6 @@
 <yes>Yes</yes>
 <no>No</no>
 <start>Start</start>
+<guestmodelabel>Login as guest</guestmodelabel>
 <guestmodetitle>{[(Guest mode}])</guestmodetitle>
 </root>

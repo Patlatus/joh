@@ -4,6 +4,7 @@ Ext.define('MyDesktop.LoginForm', {
         'MyDesktop.SimpleReader',
         'Ext.layout.container.Fit',
         'Ext.form.Panel',
+        'Ext.form.field.Checkbox',
         'Ext.form.field.ComboBox',
         'Ext.data.AbstractStore'
     ],
@@ -108,6 +109,7 @@ Ext.define('MyDesktop.LoginForm', {
         this.setTitle(window.logformtitle || 'Форма логування'),
         Ext.getCmp('username').setFieldLabel(window.usernamelabel || 'Юзернейм');
         Ext.getCmp('password').setFieldLabel(window.passwordlabel || 'Пароль');
+        Ext.getCmp('guestmode').setFieldLabel(window.guestmodelabel || 'Як гість');
         Ext.getCmp('regbutton').setText(window.reglabel || 'Зареєструватися');
         Ext.getCmp('logbutton').setText(window.loglabel || 'Залогуватися');
         Ext.getCmp('guestmode').setVisible(window.guestmodeallowed);

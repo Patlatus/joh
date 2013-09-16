@@ -41,5 +41,6 @@
 <yes>Так</yes>
 <no>Ні</no>
 <start>Старт</start>
+<guestmodelabel>Зайти як гість</guestmodelabel>
 <guestmodetitle>{[(Режим гостя}])</guestmodetitle>
 </root>

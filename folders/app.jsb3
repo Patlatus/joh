@@ -1030,26 +1030,6 @@
                     "path": "src/layout/container/"
                 },
                 {
-                    "clsName": "MyDesktop.SimpleReader",
-                    "name": "SimpleReader.js",
-                    "path": "desktop/"
-                },
-                {
-                    "clsName": "MyDesktop.RegistrationForm",
-                    "name": "RegistrationForm.js",
-                    "path": "desktop/"
-                },
-                {
-                    "clsName": "MyDesktop.LoginForm",
-                    "name": "LoginForm.js",
-                    "path": "desktop/"
-                },
-                {
-                    "clsName": "MyDesktop.App",
-                    "name": "App.js",
-                    "path": "desktop/"
-                },
-                {
                     "clsName": "Ext.util.Point",
                     "name": "Point.js",
                     "path": "src/util/"
@@ -1268,6 +1248,26 @@
                     "clsName": "Ext.form.field.Checkbox",
                     "name": "Checkbox.js",
                     "path": "src/form/field/"
+                },
+                {
+                    "clsName": "MyDesktop.SimpleReader",
+                    "name": "SimpleReader.js",
+                    "path": "desktop/"
+                },
+                {
+                    "clsName": "MyDesktop.RegistrationForm",
+                    "name": "RegistrationForm.js",
+                    "path": "desktop/"
+                },
+                {
+                    "clsName": "MyDesktop.LoginForm",
+                    "name": "LoginForm.js",
+                    "path": "desktop/"
+                },
+                {
+                    "clsName": "MyDesktop.App",
+                    "name": "App.js",
+                    "path": "desktop/"
                 },
                 {
                     "clsName": "Ext.menu.CheckItem",
