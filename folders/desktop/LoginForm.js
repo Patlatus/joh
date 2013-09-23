@@ -9,7 +9,7 @@ Ext.define('MyDesktop.LoginForm', {
         'Ext.data.AbstractStore'
     ],
     singleton: true,
-    title: (window.logformtitle || 'Форма логування'),
+    title: (window.xmlconfig.logformtitle || 'Форма логування'),
     width: 250,
 
     hidden: true,
@@ -36,24 +36,24 @@ Ext.define('MyDesktop.LoginForm', {
             msgTarget : 'side'
         },
         items: [{
-            fieldLabel: (window.usernamelabel || 'Юзернейм'),
+            fieldLabel: (window.xmlconfig.usernamelabel || 'Юзернейм'),
             id: 'username',
             name: 'username',
             allowBlank: false
         },{
-            fieldLabel: (window.passwordlabel || 'Пароль'),
+            fieldLabel: (window.xmlconfig.passwordlabel || 'Пароль'),
             id: 'password',
             name: 'password',
             inputType: 'password',
             allowBlank: false
         },{
-            fieldLabel: (window.guestmodelabel || 'Як гість'),
+            fieldLabel: (window.xmlconfig.guestmodelabel || 'Як гість'),
             id: 'guestmode',
             name: 'guestmode',
             xtype: 'checkbox',
-            visible: window.guestmodeallowed
+            visible: window.xmlconfig.guestmodeallowed
         },{
-            fieldLabel: (window.languagelabel || 'Мова'),
+            fieldLabel: (window.xmlconfig.languagelabel || 'Мова'),
             id: 'language',
             name: 'language',
             xtype: 'combo',
@@ -68,36 +68,36 @@ Ext.define('MyDesktop.LoginForm', {
         }],
         // Reset and Submit buttons
         buttons: [{
-            text: (window.reglabel || 'Зареєструватися'),
+            text: (window.xmlconfig.reglabel || 'Зареєструватися'),
             id: 'regbutton',
             handler: function() {
-                loginForm.hide();
-                regForm.show();
+                window.xmlconfig.loginForm.hide();
+                window.xmlconfig.regForm.show();
             }
         }, {
-            text: (window.loglabel || 'Залогуватися'),
+            text: (window.xmlconfig.loglabel || 'Залогуватися'),
             id: 'logbutton',
             formBind: true, //only enabled once the form is valid
             disabled: true,
             handler: function() {
                 var form = this.up('form').getForm();
-                if (window.guestmode) {
-                    loginForm.hide();
+                if (window.xmlconfig.guestmode) {
+                    window.xmlconfig.loginForm.hide();
                     myDesktopApp.init();
                     return;
                 };
                 if (form.isValid()) {
                     form.submit({
                         params: {
-                            language: window.currentLanguage
+                            language: window.xmlconfig.currentLanguage
                         },
                         success: function(form, action) {
-                            loginForm.hide();
-                            Ext.Msg.alert((window.successtitle || 'Success'), window.resultMessage);
+                            window.xmlconfig.loginForm.hide();
+                            Ext.Msg.alert((window.xmlconfig.successtitle || 'Success'), window.xmlconfig.resultMessage);
                             myDesktopApp.init();
                         },
                         failure: function(form, action) {
-                            Ext.Msg.alert((window.failedtitle || 'Failed'), window.resultMessage);
+                            Ext.Msg.alert((window.xmlconfig.failedtitle || 'Failed'), window.xmlconfig.resultMessage);
                         }
                     });
                 }
@@ -106,26 +106,26 @@ Ext.define('MyDesktop.LoginForm', {
     },
     
     update : function () {
-        this.setTitle(window.logformtitle || 'Форма логування'),
-        Ext.getCmp('username').setFieldLabel(window.usernamelabel || 'Юзернейм');
-        Ext.getCmp('password').setFieldLabel(window.passwordlabel || 'Пароль');
-        Ext.getCmp('guestmode').setFieldLabel(window.guestmodelabel || 'Як гість');
-        Ext.getCmp('regbutton').setText(window.reglabel || 'Зареєструватися');
-        Ext.getCmp('logbutton').setText(window.loglabel || 'Залогуватися');
-        Ext.getCmp('guestmode').setVisible(window.guestmodeallowed);
+        this.setTitle(window.xmlconfig.logformtitle || 'Форма логування'),
+        Ext.getCmp('username').setFieldLabel(window.xmlconfig.usernamelabel || 'Юзернейм');
+        Ext.getCmp('password').setFieldLabel(window.xmlconfig.passwordlabel || 'Пароль');
+        Ext.getCmp('guestmode').setFieldLabel(window.xmlconfig.guestmodelabel || 'Як гість');
+        Ext.getCmp('regbutton').setText(window.xmlconfig.reglabel || 'Зареєструватися');
+        Ext.getCmp('logbutton').setText(window.xmlconfig.loglabel || 'Залогуватися');
+        Ext.getCmp('guestmode').setVisible(window.xmlconfig.guestmodeallowed);
         Ext.getCmp('guestmode').on('change', this.guestModeChange, this);
         this.languageCombo = Ext.getCmp('language');
-        this.languageCombo.setFieldLabel(window.languagelabel || 'Мова');
+        this.languageCombo.setFieldLabel(window.xmlconfig.languagelabel || 'Мова');
         var data = [];
-        for (var i = 0; i < languagesArray.length; i++) {
-            var languageCode = languagesArray[i];
-            var languageName = languagesNames[languageCode];
+        for (var i = 0; i < window.xmlconfig.languagesArray.length; i++) {
+            var languageCode = window.xmlconfig.languagesArray[i];
+            var languageName = window.xmlconfig.languagesNames[languageCode];
             data.push({'code':languageCode,'name':languageName});
         }
         if (!this.languageComboLoaded) {
             this.languageCombo.getStore().loadData(data);
             this.languageComboLoaded = true;
-            this.languageCombo.setValue(currentLanguage);
+            this.languageCombo.setValue(window.xmlconfig.currentLanguage);
             this.languageCombo.on('change', this.languageChange, this);
         }
     },
@@ -133,11 +133,11 @@ Ext.define('MyDesktop.LoginForm', {
     guestModeChange : function (field, newValue, oldValue, opts) {
         Ext.getCmp('username').setDisabled(newValue);
         Ext.getCmp('password').setDisabled(newValue);
-        window.guestmode = newValue;
+        window.xmlconfig.guestmode = newValue;
     },
     
     languageChange : function (field, newValue, oldValue, opts) {
-        window.currentLanguage = newValue;
+        window.xmlconfig.currentLanguage = newValue;
         myDesktopApp.updateUserLanguage();
     }
 });

@@ -6,7 +6,7 @@ Ext.define('MyDesktop.RegistrationForm', {
         'Ext.form.Panel'
     ],
     singleton: true,
-    title: (window.regformtitle || 'Реєстраційна форма'),
+    title: (window.xmlconfig.regformtitle || 'Реєстраційна форма'),
     width: 350,
 
     hidden: true,
@@ -35,24 +35,24 @@ Ext.define('MyDesktop.RegistrationForm', {
             msgTarget : 'side'
         },
         items: [{
-            fieldLabel: (window.usernamelabel || 'Юзернейм'),
+            fieldLabel: (window.xmlconfig.usernamelabel || 'Юзернейм'),
             id:'run',
             name: 'rusername',
             allowBlank: false
         },{
-            fieldLabel: (window.passwordlabel || 'Пароль'),
+            fieldLabel: (window.xmlconfig.passwordlabel || 'Пароль'),
             id:'rpw',
             name: 'rpassword',
             inputType: 'password',
             allowBlank: false
         },{
-            fieldLabel: (window.passverlabel || 'Пароль(перевірка)'),
+            fieldLabel: (window.xmlconfig.passverlabel || 'Пароль(перевірка)'),
             id:'rpv',
             name: 'passverif',
             inputType: 'password',
             allowBlank: false
         },{
-            fieldLabel: (window.emaillabel || 'Електронна пошта'),
+            fieldLabel: (window.xmlconfig.emaillabel || 'Електронна пошта'),
             id:'re',
             name: 'email',
             vtype: 'email',
@@ -61,20 +61,20 @@ Ext.define('MyDesktop.RegistrationForm', {
 
         // Reset and Submit buttons
         buttons: [{
-            text: (window.backlabel || 'Назад'),
+            text: (window.xmlconfig.backlabel || 'Назад'),
             id:'rbb',
             handler: function() {
-                regForm.hide();
-                loginForm.show();
+                window.xmlconfig.regForm.hide();
+                window.xmlconfig.loginForm.show();
             }
         }, {
-            text: (window.resetlabel || 'Очистити'),
+            text: (window.xmlconfig.resetlabel || 'Очистити'),
             id:'rrb',
             handler: function() {
                 this.up('form').getForm().reset();
             }
         }, {
-            text: (window.signuplabel || 'Зареєструватися'),
+            text: (window.xmlconfig.signuplabel || 'Зареєструватися'),
             id:'rsb',
             formBind: true, //only enabled once the form is valid
             disabled: true,
@@ -83,15 +83,15 @@ Ext.define('MyDesktop.RegistrationForm', {
                 if (form.isValid()) {
                     form.submit({
                         params: {
-                            language: window.currentLanguage
+                            language: window.xmlconfig.currentLanguage
                         },
                     
                         success: function(form, action) {
-                            regForm.hide();
-                            Ext.Msg.alert((window.successtitle || 'Success'), window.resultMessage, function() {loginForm.show()}, loginForm);
+                            window.xmlconfig.regForm.hide();
+                            Ext.Msg.alert((window.xmlconfig.successtitle || 'Success'), window.xmlconfig.resultMessage, function() {window.xmlconfig.loginForm.show()}, window.xmlconfig.loginForm);
                         },
                         failure: function(form, action) {
-                            Ext.Msg.alert((window.failedtitle || 'Failed'), window.resultMessage);
+                            Ext.Msg.alert((window.xmlconfig.failedtitle || 'Failed'), window.xmlconfig.resultMessage);
                         }
                     });
                 }
@@ -100,13 +100,13 @@ Ext.define('MyDesktop.RegistrationForm', {
     },
     
     update : function () {
-        this.setTitle(window.regformtitle || 'Реєстраційна форма'),
-        Ext.getCmp('run').setFieldLabel(window.usernamelabel || 'Юзернейм');
-        Ext.getCmp('rpw').setFieldLabel(window.passwordlabel || 'Пароль');
-        Ext.getCmp('rpv').setFieldLabel(window.passverlabel || 'Пароль(перевірка)');
-        Ext.getCmp('re').setFieldLabel(window.emaillabel || 'Електронна пошта');
-        Ext.getCmp('rbb').setText(window.backlabel || 'Назад');
-        Ext.getCmp('rrb').setText(window.resetlabel || 'Очистити');
-        Ext.getCmp('rsb').setText(window.signuplabel || 'Зареєструватися');
+        this.setTitle(window.xmlconfig.regformtitle || 'Реєстраційна форма'),
+        Ext.getCmp('run').setFieldLabel(window.xmlconfig.usernamelabel || 'Юзернейм');
+        Ext.getCmp('rpw').setFieldLabel(window.xmlconfig.passwordlabel || 'Пароль');
+        Ext.getCmp('rpv').setFieldLabel(window.xmlconfig.passverlabel || 'Пароль(перевірка)');
+        Ext.getCmp('re').setFieldLabel(window.xmlconfig.emaillabel || 'Електронна пошта');
+        Ext.getCmp('rbb').setText(window.xmlconfig.backlabel || 'Назад');
+        Ext.getCmp('rrb').setText(window.xmlconfig.resetlabel || 'Очистити');
+        Ext.getCmp('rsb').setText(window.xmlconfig.signuplabel || 'Зареєструватися');
     }
 });

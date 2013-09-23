@@ -44,4 +44,8 @@
 <guestmodelabel>Зайти як гість</guestmodelabel>
 <guestmodetitle>{[(Режим гостя}])</guestmodetitle>
 <doctitle>Мої папки (плани)</doctitle>
+<hiremeastutortitle>Найняти мене як репетитора</hiremeastutortitle>
+<hiremeastutorshortcut>Найняти...</hiremeastutorshortcut>
+<hiremeastutordefaulttitle>Репетитор потрібен</hiremeastutordefaulttitle>
+<hiremeastutordefaulttext>Привіт.\nМені потрібен репетитор.\nБудь ласка, допоможіть.\nЗаплачу.\nДякую.</hiremeastutordefaulttext>
 </root>

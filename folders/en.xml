@@ -44,4 +44,8 @@
 <guestmodelabel>Login as guest</guestmodelabel>
 <guestmodetitle>{[(Guest mode}])</guestmodetitle>
 <doctitle>My Folders (Plans)</doctitle>
+<hiremeastutortitle>Hire me as a tutor</hiremeastutortitle>
+<hiremeastutorshortcut>Hire me...</hiremeastutorshortcut>
+<hiremeastutordefaulttitle>Tutor needed</hiremeastutordefaulttitle>
+<hiremeastutordefaulttext>Hello.\nI need a tutor.\nPlease help me.\nReady to pay.\nBest regards.</hiremeastutordefaulttext>
 </root>

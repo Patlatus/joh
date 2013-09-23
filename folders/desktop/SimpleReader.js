@@ -2,11 +2,11 @@ Ext.define('MyDesktop.SimpleReader', {
     singleton: true,
     read : function (xhr) {
         var result = Ext.decode(xhr.responseText);
-        window.userLogged = result.success;
-        window.resultMessage = result.message;
+        window.xmlconfig.userLogged = result.success;
+        window.xmlconfig.resultMessage = result.message;
         if (result.success) {
-            window.username = result.username;
-            window.userid = result.userid;
+            window.xmlconfig.username = result.username;
+            window.xmlconfig.userid = result.userid;
         }
         return {
             success : result.success,
