@@ -34,6 +34,14 @@ Ext.define('Ext.ux.desktop.Module', {
             return value;
         },
         
+        readString : function (hash, refName, mname) {
+            var reference = hash[refName];
+            if (!reference) {
+                this.write('Empty ' + refName + ' of custom module name for module ' + mname);
+            }
+            return reference;
+        },
+        
         readBoolean : function (hash, refName, mname) {
             var reference = hash[refName];
             if (!reference) {
