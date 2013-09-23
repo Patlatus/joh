@@ -17,6 +17,7 @@ Ext.define('MyDesktop.AddNote', {
             var supercls = Ext.ClassManager.get(this.superclass.$className);
             this.resolveReference = supercls.resolveReference;
             this.readBoolean = supercls.readBoolean;
+            this.readString = supercls.readString;
             this.write = supercls.write;
             
             var bigtitle = this.resolveReference(hash, 'bigtitlereference', moduleName);
@@ -30,7 +31,12 @@ Ext.define('MyDesktop.AddNote', {
             var showdelete = this.readBoolean(hash, 'showdeleteoption', moduleName);
             var loadstickers = this.readBoolean(hash, 'loadstickers', moduleName);
             var unauthorizedallowed = this.readBoolean(hash, 'enabledforunauthorizeduser', moduleName);
-            
+            var defaulthashtag = this.resolveReference(hash, 'defaulthashtagreference', moduleName);
+            var getstickersapi = this.readString(hash, 'getstickersapi', moduleName);
+            var addstickerapi = this.readString(hash, 'addstickerapi', moduleName);
+            var editstickerapi = this.readString(hash, 'editstickerapi', moduleName);
+            var deletestickerapi = this.readString(hash, 'deletestickerapi', moduleName);
+            var overrideuseridbydefaulttag = this.readBoolean(hash, 'overrideuseridbydefaulttag', moduleName);
             var color = hash['color'];
     
             return {
@@ -48,7 +54,13 @@ Ext.define('MyDesktop.AddNote', {
                 'showdelete' : showdelete,
                 'doload' : loadstickers,
                 'unauthorizedallowed' : unauthorizedallowed,
-                'color' : color
+                'color' : color,
+                'defaulthashtag' : defaulthashtag || 'default',
+                'getstickersapi' : getstickersapi || 'gn.php',
+                'addstickerapi' : addstickerapi || 'as.php',
+                'editstickerapi' : editstickerapi || 'es.php',
+                'deletestickerapi' : deletestickerapi || 'rs.php',
+                'overrideuseridbydefaulttag' : overrideuseridbydefaulttag
             }
         }
     },
@@ -71,7 +83,13 @@ Ext.define('MyDesktop.AddNote', {
         this.showduplicate = Ext.isDefined(this.showduplicate) ? this.showduplicate : true;
         this.showedit = Ext.isDefined(this.showedit) ? this.showedit : true;
         this.showdelete = Ext.isDefined(this.showdelete) ? this.showdelete : true;
+        this.overrideuseridbydefaulttag = this.overrideuseridbydefaulttag || false;
         this.color = this.color || 'yellow';
+        this.defaulthashtag = this.defaulthashtag || 'default';
+        this.getstickersapi = this.getstickersapi || 'gn.php';
+        this.addstickerapi = this.addstickerapi || 'as.php';
+        this.editstickerapi = this.editstickerapi || 'es.php';
+        this.deletestickerapi = this.deletestickerapi || 'rs.php';
         this.launcher = (window.xmlconfig.lsEnabled && !window.xmlconfig.guestmode) ? {
             text: this.shortCaption,
             iconCls:'notepad'
@@ -79,13 +97,13 @@ Ext.define('MyDesktop.AddNote', {
             
         if (this.moduleId === 'notepad') {
             if (window.xmlconfig.lsEnabled && window.xmlconfig.stickersEnabled) {
-                this.loadStickers('gn.php', window.xmlconfig.userid, 0, 50, 'background-color:yellow;', {
+                this.loadStickers(this.getstickersapi, window.xmlconfig.userid, 0, 50, 'background-color:yellow;', {
                     showDuplicateButton : false,
                     showEditButton      : true,
                     showRemoveButton    : true
                 });
             
-                this.loadStickers('gn.php', 'default', 200, 100, 'background-color:00ff00;', {
+                this.loadStickers(this.getstickersapi, 'default', 200, 100, 'background-color:00ff00;', {
                     showDuplicateButton : true,
                     showEditButton      : false,
                     showRemoveButton    : false
@@ -93,13 +111,17 @@ Ext.define('MyDesktop.AddNote', {
             }
         } else {
             if (this.doload && (window.xmlconfig.userLogged || this.unauthorizedallowed)) {
-                this.loadStickers('gn.php', window.xmlconfig.userid || 'default', 200, 100, 'background-color:' + this.color + ';', {
+                this.loadStickers(this.getstickersapi, this.getUserId(), 0, 50, 'background-color:' + this.color + ';', {
                     showDuplicateButton : this.showduplicate,
                     showEditButton      : this.showedit,
                     showRemoveButton    : this.showdelete
                 });
             }
         }
+    },
+    
+    getUserId : function () {
+        return this.overrideuseridbydefaulttag ? this.defaulthashtag : window.xmlconfig.userid || this.defaulthashtag
     },
     
     ps : function (s) {
@@ -110,7 +132,8 @@ Ext.define('MyDesktop.AddNote', {
         var desktop = this.app.getDesktop();
         var win = desktop.getWindow(this.winId);
         if (!win){
-            win = desktop.createWindow({
+            win = desktop.createWindow(this.prepareWinConfig(this.buttonTextAndWindowTitle, this.buttonTextAndWindowTitle, this.defaultTitle, this.defaultText, this.onDuplicateApplyChangesClick));
+            /* {
                 id: this.winId,
                 title:this.buttonTextAndWindowTitle,
                 width:600,
@@ -139,9 +162,9 @@ Ext.define('MyDesktop.AddNote', {
                                         text  : this.ps(Ext.getCmp(this.notepadEditorId).getValue())
                                     };
                                     Ext.Ajax.request({
-                                        url: 'as.php',
+                                        url: this.addstickerapi,
                                         params: {
-                                            hashtag: window.xmlconfig.userid,
+                                            hashtag: this.getUserId(),
                                             text: this.ps(Ext.getCmp(this.notepadEditorId).getValue()),
                                             title:this.ps(Ext.getCmp(this.titleEditorId).getValue()),
                                             x:this.app.getDesktop().getWindow(this.winId).x,
@@ -193,7 +216,7 @@ Ext.define('MyDesktop.AddNote', {
                         value: this.defaultText
                     }
                 ]
-            });
+            });*/
         }
         return win;
     },
@@ -235,10 +258,10 @@ Ext.define('MyDesktop.AddNote', {
                                     text  : this.ps(Ext.getCmp(this.notepadEditorId).getValue())
                                 };
                                 Ext.Ajax.request({
-                                    url: 'as.php',
+                                    url: this.addstickerapi,
                                     params: {
                                         id: idn,
-                                        hashtag: window.xmlconfig.userid,
+                                        hashtag: this.getUserId(),
                                         text: this.ps(Ext.getCmp(this.notepadEditorId).getValue()),
                                         title:this.ps(Ext.getCmp(this.titleEditorId).getValue()),
                                         x:this.app.getDesktop().getWindow(this.winId).x,
@@ -333,10 +356,10 @@ Ext.define('MyDesktop.AddNote', {
                                     text  : this.ps(Ext.getCmp(this.notepadEditorId).getValue())
                                 };
                                 Ext.Ajax.request({
-                                    url: 'es.php',
+                                    url: this.editstickerapi,
                                     params: {
                                         id: idn,
-                                        hashtag: window.xmlconfig.userid,
+                                        hashtag: this.getUserId(),
                                         text: this.ps(Ext.getCmp(this.notepadEditorId).getValue()),
                                         title:this.ps(Ext.getCmp(this.titleEditorId).getValue()),
                                         x:this.app.getDesktop().getWindow(this.winId).x,
@@ -399,7 +422,11 @@ Ext.define('MyDesktop.AddNote', {
     editPanel : function (callback) {
         var desktop = this.app.getDesktop();
         panelWin = desktop.getWindow(this.idn);
-        win = desktop.createWindow({
+        win = desktop.createWindow(Ext.apply(this.prepareWinConfig(window.xmlconfig.editnote || 'Редагувати запис', window.xmlconfig.applychanges || 'Застосувати зміни', panelWin.title, panelWin.items.items[0].getEl().dom.firstChild.innerHTML, callback), {
+            width:600,
+            height:400
+        }));
+        /*,
             id: this.winId,
             title:window.xmlconfig.editnote || 'Редагувати запис',
             width:600,
@@ -457,8 +484,68 @@ Ext.define('MyDesktop.AddNote', {
                     value: panelWin.items.items[0].getEl().dom.firstChild.innerHTML
                 }
             ]
-        });
+        });*/
         win.show();
+    },
+    
+    prepareWinConfig : function (winTitle, btnText, title, text, callback) {
+        return {
+            id: this.winId,
+            title:winTitle,
+            width:600,
+            height:400,
+            iconCls: 'notepad',
+            animCollapse:false,
+            border: false,
+            //defaultFocus: this.notepadEditorId, EXTJSIV-1300
+
+            // IE has a bug where it will keep the iframe's background visible when the window
+            // is set to visibility:hidden. Hiding the window via position offsets instead gets
+            // around this bug.
+            hideMode: 'offsets',
+            bbar: [
+                { 
+                    xtype: 'button',
+                    text: btnText,
+                    listeners: {
+                        click: {
+                            scope: this,
+                            fn: callback
+                        }
+                    }
+                }
+            ],
+            layout: {
+                type: 'vbox',
+                align: 'stretch'
+            },
+            items: [
+                {
+                    xtype: 'panel',
+                    
+                    layout: {
+                        type: 'hbox',
+                        align: 'stretch'
+                    },
+                    items: [
+                        {
+                            html: window.xmlconfig.titletext || 'Заголовок:'
+                        },
+                        {
+                            xtype: 'textfield',
+                            id: this.titleEditorId,
+                            value: title
+                        }
+                    ]
+                },
+                {
+                    xtype: 'htmleditor',
+                    flex: 1,
+                    id: this.notepadEditorId,
+                    value: text
+                }
+            ]
+        }
     },
     
     onEditApplyChangesClick : function () {
@@ -470,10 +557,10 @@ Ext.define('MyDesktop.AddNote', {
             text  : this.ps(Ext.getCmp(this.notepadEditorId).getValue())
         };
         Ext.Ajax.request({
-            url: 'es.php',
+            url: this.editstickerapi,
             params: {
                 id: this.idn,
-                hashtag: window.xmlconfig.userid,
+                hashtag: this.getUserId(),
                 text: this.ps(Ext.getCmp(this.notepadEditorId).getValue()),
                 title:this.ps(Ext.getCmp(this.titleEditorId).getValue()),
                 x:this.app.getDesktop().getWindow(this.winId).x,
@@ -511,13 +598,13 @@ Ext.define('MyDesktop.AddNote', {
             text  : this.ps(Ext.getCmp(this.notepadEditorId).getValue())
         };
         */
-        this.write(Ext.apply(data, {hashtag: window.xmlconfig.userid}));
+        this.write(Ext.apply(data, {hashtag: this.getUserId()}));
         this.write(data);
         Ext.Ajax.request({
-            url: 'as.php',
+            url: this.addstickerapi,
             /*
             params: {
-                hashtag: window.xmlconfig.userid,
+                hashtag: this.getUserId(),
                 text: this.ps(Ext.getCmp(this.notepadEditorId).getValue()),
                 title:this.ps(Ext.getCmp(this.titleEditorId).getValue()),
                 x:this.app.getDesktop().getWindow(this.winId).x,
@@ -525,7 +612,7 @@ Ext.define('MyDesktop.AddNote', {
             },
             */
             params: Ext.apply(data, {
-                hashtag: window.xmlconfig.userid
+                hashtag: this.getUserId()
             }),
             scope: this,
             success: function (response){
@@ -547,7 +634,7 @@ Ext.define('MyDesktop.AddNote', {
         Ext.Msg.confirm(window.xmlconfig.removenotetitle || "Агов!", window.xmlconfig.removenotetext || "Чи Ви справді бажаєте видалити цей милий і прекрасний запис? Цю дію не можна скасувати.", function(button) {
             if (button === 'yes') {
                 Ext.Ajax.request({
-                    url: 'rs.php',
+                    url: this.deletestickerapi,
                     params: {
                         id: idn
                     },
