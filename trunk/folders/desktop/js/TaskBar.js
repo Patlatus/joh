@@ -42,7 +42,7 @@ Ext.define('Ext.ux.desktop.TaskBar', {
                 iconCls: 'ux-start-button-icon',
                 menu: me.startMenu,
                 menuAlign: 'bl-tl',
-                text: window.start || 'Старт'
+                text: window.xmlconfig.start || 'Старт'
             },
             me.quickStart,
             {
