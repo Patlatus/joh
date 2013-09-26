@@ -133,90 +133,6 @@ Ext.define('MyDesktop.AddNote', {
         var win = desktop.getWindow(this.winId);
         if (!win){
             win = desktop.createWindow(this.prepareWinConfig(this.buttonTextAndWindowTitle, this.buttonTextAndWindowTitle, this.defaultTitle, this.defaultText, this.onDuplicateApplyChangesClick));
-            /* {
-                id: this.winId,
-                title:this.buttonTextAndWindowTitle,
-                width:600,
-                height:400,
-                iconCls: 'notepad',
-                animCollapse:false,
-                border: false,
-                //defaultFocus: this.notepadEditorId, EXTJSIV-1300
-
-                // IE has a bug where it will keep the iframe's background visible when the window
-                // is set to visibility:hidden. Hiding the window via position offsets instead gets
-                // around this bug.
-                hideMode: 'offsets',
-                bbar: [
-                    { 
-                        xtype: 'button',
-                        text: this.buttonTextAndWindowTitle,
-                        listeners: {
-                            click: {
-                                scope: this,
-                                fn: function() {
-                                    var data = {
-                                        title : this.ps(Ext.getCmp(this.titleEditorId).getValue()),
-                                        x     : this.app.getDesktop().getWindow(this.winId).x,
-                                        y     : this.app.getDesktop().getWindow(this.winId).y,
-                                        text  : this.ps(Ext.getCmp(this.notepadEditorId).getValue())
-                                    };
-                                    Ext.Ajax.request({
-                                        url: this.addstickerapi,
-                                        params: {
-                                            hashtag: this.getUserId(),
-                                            text: this.ps(Ext.getCmp(this.notepadEditorId).getValue()),
-                                            title:this.ps(Ext.getCmp(this.titleEditorId).getValue()),
-                                            x:this.app.getDesktop().getWindow(this.winId).x,
-                                            y:this.app.getDesktop().getWindow(this.winId).y
-                                        },
-                                        scope: this,
-                                        success: function(response){
-                                            data.id = response.responseText;
-                                            this.showPanel(data, 'background-color:yellow;', {
-                                                showDuplicateButton : false,
-                                                showEditButton      : true,
-                                                showRemoveButton    : true
-                                            });
-                                        }
-                                    });
-                                    this.app.getDesktop().getWindow(this.winId).close();
-                                }
-                            }
-                        }
-                    }
-                ],
-                layout: {
-                    type: 'vbox',
-                    align: 'stretch'
-                },
-                items: [
-                    {
-                        xtype: 'panel',
-                        
-                        layout: {
-                            type: 'hbox',
-                            align: 'stretch'
-                        },
-                        items: [
-                            {
-                                html: window.xmlconfig.titletext || 'Заголовок:'
-                            },
-                            {
-                                xtype: 'textfield',
-                                id: this.titleEditorId,
-                                value: this.defaultTitle
-                            }
-                        ]
-                    },
-                    {
-                        xtype: 'htmleditor',
-                        flex: 1,
-                        id: this.notepadEditorId,
-                        value: this.defaultText
-                    }
-                ]
-            });*/
         }
         return win;
     },
@@ -224,199 +140,11 @@ Ext.define('MyDesktop.AddNote', {
     duplicate : function (idn) {
         this.idn = idn;
         this.editPanel(this.onDuplicateApplyChangesClick);
-        /*
-        var desktop = this.app.getDesktop();
-        panelWin = desktop.getWindow(idn);
-        win = desktop.createWindow({
-            id: this.winId,
-            title:window.xmlconfig.editnote || 'Редагувати запис',//'Add new note',
-            width:600,
-            height:400,
-            x: panelWin.x,
-            y: panelWin.y,
-            iconCls: 'notepad',
-            animCollapse:false,
-            border: false,
-            //defaultFocus: this.notepadEditorId, EXTJSIV-1300
-
-            // IE has a bug where it will keep the iframe's background visible when the window
-            // is set to visibility:hidden. Hiding the window via position offsets instead gets
-            // around this bug.
-            hideMode: 'offsets',
-            bbar: [
-                { 
-                    xtype: 'button',
-                    text: window.xmlconfig.applychanges || 'Застосувати зміни',
-                    listeners: {
-                        click: {
-                            scope: this,
-                            fn: function() {
-                                var data = {
-                                    title : this.ps(Ext.getCmp(this.titleEditorId).getValue()),
-                                    x     : this.app.getDesktop().getWindow(this.winId).x,
-                                    y     : this.app.getDesktop().getWindow(this.winId).y,
-                                    text  : this.ps(Ext.getCmp(this.notepadEditorId).getValue())
-                                };
-                                Ext.Ajax.request({
-                                    url: this.addstickerapi,
-                                    params: {
-                                        id: idn,
-                                        hashtag: this.getUserId(),
-                                        text: this.ps(Ext.getCmp(this.notepadEditorId).getValue()),
-                                        title:this.ps(Ext.getCmp(this.titleEditorId).getValue()),
-                                        x:this.app.getDesktop().getWindow(this.winId).x,
-                                        y:this.app.getDesktop().getWindow(this.winId).y
-                                    },
-                                    scope: this,
-                                    success: function (response){
-                                        data.id = response.responseText;
-                                        this.showPanel(data, 'background-color:yellow;', {
-                                            showDuplicateButton : false,
-                                            showEditButton      : true,
-                                            showRemoveButton    : true
-                                        });
-                                    }
-                                });
-                                this.app.getDesktop().getWindow(this.winId).close();
-                            }
-                        }
-                    }
-                }
-            ],
-            layout: {
-                type: 'vbox',
-                align: 'stretch'
-            },
-            items: [
-                {
-                    xtype: 'panel',
-                    
-                    layout: {
-                        type: 'hbox',
-                        align: 'stretch'
-                    },
-                    items: [
-                        {
-                            html: window.xmlconfig.titletext || 'Заголовок:'
-                        },
-                        {
-                            xtype: 'textfield',
-                            id: this.titleEditorId,
-                            value: panelWin.title
-                        }
-                    ]
-                },
-                {
-                    xtype: 'htmleditor',
-                    flex: 1,
-                    id: this.notepadEditorId,
-                    value: panelWin.items.items[0].getEl().dom.firstChild.innerHTML
-                }
-            ]
-        });
-        win.show();
-        */
     },
     
     edit : function (idn) {
         this.idn = idn;
         this.editPanel(this.onEditApplyChangesClick);
-        /*
-        var desktop = this.app.getDesktop();
-        panelWin = desktop.getWindow(idn);
-        win = desktop.createWindow({
-            id: this.winId,
-            title:window.xmlconfig.editnote || 'Редагувати запис',
-            width:600,
-            height:400,
-            x: panelWin.x,
-            y: panelWin.y,
-            iconCls: 'notepad',
-            animCollapse:false,
-            border: false,
-            //defaultFocus: this.notepadEditorId, EXTJSIV-1300
-
-            // IE has a bug where it will keep the iframe's background visible when the window
-            // is set to visibility:hidden. Hiding the window via position offsets instead gets
-            // around this bug.
-            hideMode: 'offsets',
-            bbar: [
-                { 
-                    xtype: 'button',
-                    text: window.xmlconfig.applychanges || 'Застосувати зміни',
-                    listeners: {
-                        click: {
-                            scope: this,
-                            fn: function () {
-                                var data = {
-                                    id    : idn,
-                                    title : this.ps(Ext.getCmp(this.titleEditorId).getValue()),
-                                    x     : this.app.getDesktop().getWindow(this.winId).x,
-                                    y     : this.app.getDesktop().getWindow(this.winId).y,
-                                    text  : this.ps(Ext.getCmp(this.notepadEditorId).getValue())
-                                };
-                                Ext.Ajax.request({
-                                    url: this.editstickerapi,
-                                    params: {
-                                        id: idn,
-                                        hashtag: this.getUserId(),
-                                        text: this.ps(Ext.getCmp(this.notepadEditorId).getValue()),
-                                        title:this.ps(Ext.getCmp(this.titleEditorId).getValue()),
-                                        x:this.app.getDesktop().getWindow(this.winId).x,
-                                        y:this.app.getDesktop().getWindow(this.winId).y
-                                    },
-                                    scope: this,
-                                    success: function (response){
-                                        var destinationWin = this.getDesktop().getWindow(idn);
-                                        if (destinationWin && !destinationWin.destroyed) {
-                                            destinationWin.destroy();
-                                        }
-                                        this.showPanel(data, 'background-color:yellow;', {
-                                            showDuplicateButton : false,
-                                            showEditButton      : true,
-                                            showRemoveButton    : true
-                                        });
-                                    }
-                                });
-                                this.app.getDesktop().getWindow(this.winId).close();
-                            }
-                        }
-                    }
-                }
-            ],
-            layout: {
-                type: 'vbox',
-                align: 'stretch'
-            },
-            items: [
-                {
-                    xtype: 'panel',
-                    
-                    layout: {
-                        type: 'hbox',
-                        align: 'stretch'
-                    },
-                    items: [
-                        {
-                            html: window.xmlconfig.titletext || 'Заголовок:'
-                        },
-                        {
-                            xtype: 'textfield',
-                            id: this.titleEditorId,
-                            value: panelWin.title
-                        }
-                    ]
-                },
-                {
-                    xtype: 'htmleditor',
-                    flex: 1,
-                    id: this.notepadEditorId,
-                    value: panelWin.items.items[0].getEl().dom.firstChild.innerHTML
-                }
-            ]
-        });
-        win.show();
-        */
     },
     
     editPanel : function (callback) {
@@ -426,65 +154,6 @@ Ext.define('MyDesktop.AddNote', {
             width:600,
             height:400
         }));
-        /*,
-            id: this.winId,
-            title:window.xmlconfig.editnote || 'Редагувати запис',
-            width:600,
-            height:400,
-            x: panelWin.x,
-            y: panelWin.y,
-            iconCls: 'notepad',
-            animCollapse:false,
-            border: false,
-            //defaultFocus: this.notepadEditorId, EXTJSIV-1300
-
-            // IE has a bug where it will keep the iframe's background visible when the window
-            // is set to visibility:hidden. Hiding the window via position offsets instead gets
-            // around this bug.
-            hideMode: 'offsets',
-            bbar: [
-                { 
-                    xtype: 'button',
-                    text: window.xmlconfig.applychanges || 'Застосувати зміни',
-                    listeners: {
-                        click: {
-                            scope: this,
-                            fn: callback
-                        }
-                    }
-                }
-            ],
-            layout: {
-                type: 'vbox',
-                align: 'stretch'
-            },
-            items: [
-                {
-                    xtype: 'panel',
-                    
-                    layout: {
-                        type: 'hbox',
-                        align: 'stretch'
-                    },
-                    items: [
-                        {
-                            html: window.xmlconfig.titletext || 'Заголовок:'
-                        },
-                        {
-                            xtype: 'textfield',
-                            id: this.titleEditorId,
-                            value: panelWin.title
-                        }
-                    ]
-                },
-                {
-                    xtype: 'htmleditor',
-                    flex: 1,
-                    id: this.notepadEditorId,
-                    value: panelWin.items.items[0].getEl().dom.firstChild.innerHTML
-                }
-            ]
-        });*/
         win.show();
     },
     
@@ -569,20 +238,7 @@ Ext.define('MyDesktop.AddNote', {
             scope: this,
             success: function (response){
                 this.destroyWindow(this.idn);
-                /*
-                var destinationWin = this.app.getDesktop().getWindow(this.idn);
-                if (destinationWin && !destinationWin.destroyed) {
-                    destinationWin.destroy();
-                }
-                */
                 this.showData(data);
-                /*
-                this.showPanel(data, 'background-color:yellow;', {
-                    showDuplicateButton : false,
-                    showEditButton      : true,
-                    showRemoveButton    : true
-                });
-                */
             }
         });
         this.app.getDesktop().getWindow(this.winId).close();
@@ -590,41 +246,15 @@ Ext.define('MyDesktop.AddNote', {
     
     onDuplicateApplyChangesClick : function () {
         var data = this.cookData();
-        /*
-        var data = {
-            title : this.ps(Ext.getCmp(this.titleEditorId).getValue()),
-            x     : this.app.getDesktop().getWindow(this.winId).x,
-            y     : this.app.getDesktop().getWindow(this.winId).y,
-            text  : this.ps(Ext.getCmp(this.notepadEditorId).getValue())
-        };
-        */
-        this.write(Ext.apply(data, {hashtag: this.getUserId()}));
-        this.write(data);
         Ext.Ajax.request({
             url: this.addstickerapi,
-            /*
-            params: {
-                hashtag: this.getUserId(),
-                text: this.ps(Ext.getCmp(this.notepadEditorId).getValue()),
-                title:this.ps(Ext.getCmp(this.titleEditorId).getValue()),
-                x:this.app.getDesktop().getWindow(this.winId).x,
-                y:this.app.getDesktop().getWindow(this.winId).y
-            },
-            */
-            params: Ext.apply(data, {
+            params: Ext.apply({
                 hashtag: this.getUserId()
-            }),
+            }, data),
             scope: this,
             success: function (response){
                 data.id = response.responseText;
                 this.showData(data);
-                /*
-                this.showPanel(data, 'background-color:yellow;', {
-                    showDuplicateButton : false,
-                    showEditButton      : true,
-                    showRemoveButton    : true
-                });
-                */
             }
         });
         this.app.getDesktop().getWindow(this.winId).close();
@@ -641,12 +271,6 @@ Ext.define('MyDesktop.AddNote', {
                     scope: this,
                     success: function(response){
                         this.destroyWindow(idn);
-                        /*
-                        var destinationWin = this.app.getDesktop().getWindow(idn);
-                        if (destinationWin && !destinationWin.destroyed) {
-                            destinationWin.destroy();
-                        }
-                        */
                     }
                 });
             }
