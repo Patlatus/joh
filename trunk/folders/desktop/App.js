@@ -94,10 +94,7 @@ Ext.define('MyDesktop.App', {
                 handler:me.onSettings,
                 scope:me
             }],
-            shortcuts: Ext.create('Ext.data.Store', {
-                model:'Ext.ux.desktop.ShortcutModel',
-                data: []
-            }),
+
             wallpaper: 'wallpapers/isus-wallpaper.jpg',
             wallpaperStretch:false
         });
@@ -131,14 +128,8 @@ Ext.define('MyDesktop.App', {
     },
     
     getTaskbarConfig:function () {
-        var ret = this.callParent(),
-            qs  = window.xmlconfig.lsEnabled && !window.xmlconfig.guestmode ? [{
-                name:window.xmlconfig.addnote || 'Додати запис',
-                iconCls:'notepad',
-                module:'notepad'
-            }] : [];
+        var ret = this.callParent();
         return Ext.apply(ret, {
-            quickStart: qs,
             trayItems:[{ 
                 xtype:'trayclock',
                 flex:1

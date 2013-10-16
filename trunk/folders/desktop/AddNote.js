@@ -39,9 +39,7 @@ Ext.define('MyDesktop.AddNote', {
             var overrideuseridbydefaulttag = this.readBoolean(hash, 'overrideuseridbydefaulttag', moduleName);
             var color = hash['color'];
     
-            return {
-                'winId' : moduleName,
-                'moduleId' : moduleName,
+            return Ext.apply(supercls['prepareConfig'].apply(this, arguments), {
                 'titleEditorId' : moduleName + '||title-editor',
                 'notepadEditorId' : moduleName + '||notepad-editor',
                 'buttonTextAndWindowTitle' : bigtitle,
@@ -61,7 +59,7 @@ Ext.define('MyDesktop.AddNote', {
                 'editstickerapi' : editstickerapi || 'es.php',
                 'deletestickerapi' : deletestickerapi || 'rs.php',
                 'overrideuseridbydefaulttag' : overrideuseridbydefaulttag
-            }
+            })
         }
     },
     
@@ -90,11 +88,28 @@ Ext.define('MyDesktop.AddNote', {
         this.addstickerapi = this.addstickerapi || 'as.php';
         this.editstickerapi = this.editstickerapi || 'es.php';
         this.deletestickerapi = this.deletestickerapi || 'rs.php';
-        this.launcher = (window.xmlconfig.lsEnabled && !window.xmlconfig.guestmode) ? {
-            text: this.shortCaption,
-            iconCls:'notepad'
+        this.showquicklaunchicon = Ext.isDefined(this.showquicklaunchicon) ? this.showquicklaunchicon : true;
+        this.showstartmenuitem = Ext.isDefined(this.showstartmenuitem) ? this.showstartmenuitem : true;
+        this.showdesktopicon = this.showdesktopicon || false;
+        this.desktopiconcss = this.desktopiconcss || 'tutor-shortcut';
+        this.startmenuquicklaunchiconcss = this.startmenuquicklaunchiconcss || 'notepad';
+        this.launcher = (this.showstartmenuitem && (this.unauthorizedallowed || (window.xmlconfig.lsEnabled && !window.xmlconfig.guestmode))) ? {
+            text : this.shortCaption,
+            iconCls : this.startmenuquicklaunchiconcss
+        } : null;
+        
+        this.quickLaunch = this.showquicklaunchicon && (this.unauthorizedallowed || (window.xmlconfig.lsEnabled && !window.xmlconfig.guestmode)) ? {
+            name : this.shortCaption,
+            iconCls : this.startmenuquicklaunchiconcss,
+            module : this.moduleId
         } : null;
             
+        this.shortCut = this.showdesktopicon && (this.unauthorizedallowed || (window.xmlconfig.lsEnabled && !window.xmlconfig.guestmode)) ? {
+            name : this.shortCaption,
+            iconCls : this.desktopiconcss,
+            module : this.moduleId
+        } : null;
+        
         if (this.moduleId === 'notepad') {
             if (window.xmlconfig.lsEnabled && window.xmlconfig.stickersEnabled) {
                 this.loadStickers(this.getstickersapi, window.xmlconfig.userid, 0, 50, 'background-color:yellow;', {
@@ -334,6 +349,9 @@ Ext.define('MyDesktop.AddNote', {
     },
 
     showData : function (data) {
+        if (!this.showsticker) {
+            return;
+        }
         this.showPanel(data, 'background-color:' + this.color + ';', {
             showDuplicateButton : this.showduplicate,
             showEditButton      : this.showedit,

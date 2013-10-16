@@ -87,6 +87,10 @@ Ext.define('Ext.ux.desktop.App', {
     getDesktopConfig: function () {
         var me = this, cfg = {
             app: me,
+            shortcuts: Ext.create('Ext.data.Store', {
+                model:'Ext.ux.desktop.ShortcutModel',
+                data: me.getShortCutsConfig()
+            }),
             taskbarConfig: me.getTaskbarConfig()
         };
 
@@ -121,6 +125,38 @@ Ext.define('Ext.ux.desktop.App', {
         return cfg;
     },
 
+    getQuickLaunchConfig: function () {
+        var me = this,
+            cfg = [
+            ],
+            quickLaunch;
+
+        Ext.each(me.modules, function (module) {
+            quickLaunch = module.quickLaunch;
+            if (quickLaunch) {
+                quickLaunch.handler = quickLaunch.handler || Ext.bind(me.createWindow, me, [module]);
+                cfg.push(module.quickLaunch);
+            }
+        });
+
+        return cfg;
+    },
+
+    getShortCutsConfig: function () {
+        var me = this,
+            cfg = [
+            ],
+            shortCut;
+
+        Ext.each(me.modules, function (module) {
+            shortCut = module.shortCut;
+            if (shortCut) {
+                cfg.push(module.shortCut);
+            }
+        });
+
+        return cfg;
+    },
     createWindow: function(module) {
         var window = module.createWindow();
         window.show();
@@ -134,6 +170,7 @@ Ext.define('Ext.ux.desktop.App', {
     getTaskbarConfig: function () {
         var me = this, cfg = {
             app: me,
+            quickStart: me.getQuickLaunchConfig(),
             startConfig: me.getStartConfig()
         };
 
