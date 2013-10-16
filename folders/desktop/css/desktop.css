@@ -184,6 +184,10 @@
     background-image: url(../images/matches.gif);
 }
 
+.tutor-shortcut {
+    background-image: url( ../images/Tutor.gif );
+}
+
 .notepad-shortcut {
     background-image: url(../images/notepadLarge.png);
     width: 46px;

@@ -48,6 +48,18 @@ Ext.define('Ext.ux.desktop.Module', {
                 this.write('Empty ' + refName + ' of custom module name for module ' + mname);
             }
             return (reference === 'on') || (reference === 'yes');
+        },
+        
+        prepareConfig  : function (moduleName, hash) {
+            return {
+                'winId' : moduleName,
+                'moduleId' : moduleName,
+                'showdesktopicon' : this.readBoolean(hash, 'showdesktopicon', moduleName),
+                'showquicklaunchicon' : this.readBoolean(hash, 'showquicklaunchicon', moduleName),
+                'showstartmenuitem' : this.readBoolean(hash, 'showstartmenuitem', moduleName),
+                'desktopiconcss' : this.readString(hash, 'desktopiconcss', moduleName),
+                'startmenuquicklaunchiconcss' : this.readString(hash, 'startmenuquicklaunchiconcss', moduleName)
+            }
         }
     },
 
