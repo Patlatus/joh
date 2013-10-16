@@ -103,3 +103,14 @@ CREATE TABLE `failedsignups` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `tutorrequests`;
+CREATE TABLE IF NOT EXISTS `tutorrequests` (
+  `id` int(10) NOT NULL AUTO_INCREMENT,
+  `hashtag` text NOT NULL,
+  `text` text,
+  `title` text,
+  `x` int(11) DEFAULT NULL,
+  `y` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id_UNIQUE` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8;
