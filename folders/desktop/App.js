@@ -18,9 +18,11 @@ Ext.define('MyDesktop.App', {
         'MyDesktop.Settings'],
         
     getDefaultModules : function() {
-        return [
-            new MyDesktop.AddNote()
-        ];
+        var modulesToReturn = [];
+        if (window.xmlconfig.stickersEnabled) {
+            modulesToReturn.push(new MyDesktop.AddNote())
+        }
+        return modulesToReturn;
     },
     
 
