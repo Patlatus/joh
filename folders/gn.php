@@ -28,7 +28,7 @@ catch(Exception $e)
 $hashtag = $_POST["hashtag"];
 if ($hashtag=="" || $hashtag==null) {
     $hashtag = $_GET["hashtag"];
-	$log->lwrite('Empty POST, trying to get GET, $hashtag= '.$hashtag);
+    $log->lwrite('Empty POST, trying to get GET, $hashtag= '.$hashtag);
 }
 if ($hashtag=="" || $hashtag==null) {
         echo 'Empty hashtag, cannot execute query';
@@ -49,14 +49,14 @@ $result = mysql_query($sql);
 $log->lwrite($result);
 $log->lwrite("result=".print_r($result,true));
 echo "[";
-if($row = mysql_fetch_array($result))
-  {
-  echo "{text:'" . $row['text'] . "',id:'" . $row['id'] . "',hashtag:'" . $row['hashtag'] . "',title:'" . $row['title'] . "',x:'" . $row['x']  . "',y:'" . $row['y']  . "'}";
-  }
-while($row = mysql_fetch_array($result))
-  {
-  echo ",{text:'" . $row['text'] . "',id:'" . $row['id'] . "',hashtag:'" . $row['hashtag'] . "',title:'" . $row['title'] . "',x:'" . $row['x']  . "',y:'" . $row['y'] . "'}";
-  }
+if ($result) {
+    if($row = mysql_fetch_array($result)) {
+        echo "{text:'" . $row['text'] . "',id:'" . $row['id'] . "',hashtag:'" . $row['hashtag'] . "',title:'" . $row['title'] . "',x:'" . $row['x']  . "',y:'" . $row['y']  . "'}";
+    }
+    while($row = mysql_fetch_array($result)) {
+        echo ",{text:'" . $row['text'] . "',id:'" . $row['id'] . "',hashtag:'" . $row['hashtag'] . "',title:'" . $row['title'] . "',x:'" . $row['x']  . "',y:'" . $row['y'] . "'}";
+    }
+}
 echo "]";
 
 mysql_close($con);

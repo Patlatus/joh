@@ -75814,7 +75814,7 @@ Ext.define('MyDesktop.AddNote', {
         this.doload = Ext.isDefined(this.doload) ? this.doload : (this.moduleId === 'notepad');
         this.unauthorizedallowed = this.unauthorizedallowed || false;
         this.showsticker = Ext.isDefined(this.showsticker) ? this.showsticker : true;
-        this.showduplicate = Ext.isDefined(this.showduplicate) ? this.showduplicate : true;
+        this.showduplicate = this.showduplicate || false;
         this.showedit = Ext.isDefined(this.showedit) ? this.showedit : true;
         this.showdelete = Ext.isDefined(this.showdelete) ? this.showdelete : true;
         this.overrideuseridbydefaulttag = this.overrideuseridbydefaulttag || false;

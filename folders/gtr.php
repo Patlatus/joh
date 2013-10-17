@@ -45,11 +45,13 @@ $result = mysql_query($sql);
 $log->lwrite($result);
 $log->lwrite("result=".print_r($result,true));
 echo "[";
-if($row = mysql_fetch_array($result)) {
-    echo "{text:'" . $row['text'] . "',id:'" . $row['id'] . "',hashtag:'" . $row['hashtag'] . "',title:'" . $row['title'] . "',x:'" . $row['x']  . "',y:'" . $row['y']  . "'}";
-}
-while($row = mysql_fetch_array($result)) {
-    echo ",{text:'" . $row['text'] . "',id:'" . $row['id'] . "',hashtag:'" . $row['hashtag'] . "',title:'" . $row['title'] . "',x:'" . $row['x']  . "',y:'" . $row['y'] . "'}";
+if ($result) {
+    if($row = mysql_fetch_array($result)) {
+        echo "{text:'" . $row['text'] . "',id:'" . $row['id'] . "',hashtag:'" . $row['hashtag'] . "',title:'" . $row['title'] . "',x:'" . $row['x']  . "',y:'" . $row['y']  . "'}";
+    }
+    while($row = mysql_fetch_array($result)) {
+        echo ",{text:'" . $row['text'] . "',id:'" . $row['id'] . "',hashtag:'" . $row['hashtag'] . "',title:'" . $row['title'] . "',x:'" . $row['x']  . "',y:'" . $row['y'] . "'}";
+    }
 }
 echo "]";
 
