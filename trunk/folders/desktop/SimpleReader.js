@@ -1,3 +1,4 @@
+window.xmlconfig = {};
 Ext.define('MyDesktop.SimpleReader', {
     singleton: true,
     read : function (xhr) {
