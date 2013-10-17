@@ -945,8 +945,8 @@
                     "path": "desktop/js/overrides/"
                 },
                 {
-                    "clsName": "MyDesktop.Notepad",
-                    "name": "Notepad.js",
+                    "clsName": "MyDesktop.AddNote",
+                    "name": "AddNote.js",
                     "path": "desktop/"
                 },
                 {

@@ -111,7 +111,7 @@ Ext.define('MyDesktop.AddNote', {
         } : null;
         
         if (this.moduleId === 'notepad') {
-            if (window.xmlconfig.lsEnabled) {
+            if (window.xmlconfig.lsEnabled && !window.xmlconfig.guestmode) {
                 this.loadStickers(this.getstickersapi, window.xmlconfig.userid, 0, 50, 'background-color:yellow;', {
                     showDuplicateButton : false,
                     showEditButton      : true,
