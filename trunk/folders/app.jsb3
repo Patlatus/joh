@@ -950,6 +950,26 @@
                     "path": "desktop/"
                 },
                 {
+                    "clsName": "MyDesktop.AudioReader",
+                    "name": "AudioReader.js",
+                    "path": "desktop/"
+                },
+                {
+                    "clsName": "MyDesktop.FilesDownloader",
+                    "name": "FilesDownloader.js",
+                    "path": "desktop/"
+                },
+                {
+                    "clsName": "MyDesktop.FolderDataLoader",
+                    "name": "FolderDataLoader.js",
+                    "path": "desktop/"
+                },
+                {
+                    "clsName": "MyDesktop.Folders",
+                    "name": "Folders.js",
+                    "path": "desktop/"
+                },
+                {
                     "clsName": "Ext.LoadMask",
                     "name": "LoadMask.js",
                     "path": "src/"

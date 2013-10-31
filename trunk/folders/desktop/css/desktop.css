@@ -168,6 +168,32 @@
     text-decoration: underline;
 }
 
+.ux-folders-shortcut {
+    cursor: pointer;
+    text-align: center;
+    padding: 8px;
+    margin: 8px;
+    width: 64px;
+}
+
+.ux-folders-shortcut-icon {
+    width: 48px;
+    height: 48px;
+    background-color: transparent;
+    background-repeat: no-repeat;
+}
+
+.ux-folders-shortcut-text {
+    font: normal 10px tahoma,arial,verdana,sans-serif;
+    text-decoration: none;
+    padding-top: 5px;
+    color: black;
+}
+
+.x-view-over .ux-folders-shortcut-text {
+    text-decoration: underline;
+}
+
 
 /*----------------------------------------------------
     Various icon classes
@@ -186,6 +212,26 @@
 
 .tutor-shortcut {
     background-image: url( ../images/Tutor.gif );
+}
+
+.folder-shortcut {
+    background-image: url( ../images/Folder-icon.png );
+}
+
+.music-folder-shortcut {
+    background-image: url( ../images/Folder-Music.png );
+}
+
+.music-shortcut {
+    background-image: url( ../images/Music.png );
+}
+
+.exe-shortcut {
+    background-image: url( ../images/Programs-Windows-icon.png );
+}
+
+.progs-shortcut {
+    background-image: url( ../images/program-group-icon.png );
 }
 
 .notepad-shortcut {
@@ -243,6 +289,20 @@
 .icon-matches{
     background-image:url( ../images/m.gif ) !important;
 }
+
+.icon-folder{
+    background-image:url( ../images/Folder-icon-s.png ) !important;
+}
+.icon-music-folder{
+    background-image:url( ../images/Folder-Music-s.png ) !important;
+}
+.icon-music{
+    background-image:url( ../images/Music-s.png ) !important;
+}
+.icon-progs{
+    background-image:url( ../images/program-group-icon-s.png ) !important;
+}
+
 .icon-grid {
     background-image:url( ../images/grid.png ) !important;
 }

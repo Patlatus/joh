@@ -49,4 +49,11 @@
 <hiremeastutordefaulttitle>Tutor needed</hiremeastutordefaulttitle>
 <hiremeastutordefaulttext>Hello.\nI need a tutor.\nPlease help me.\nReady to pay.\nBest regards.</hiremeastutordefaulttext>
 <defaultreference>default</defaultreference>
+<folderstitle>Folders:</folderstitle>
+<foldersshortcut>folders</foldersshortcut>
+<audiotitle>Playing audio file:</audiotitle>
+<foldersunknowndatatypeerror>Unknown data type of file with name: </foldersunknowndatatypeerror>
+<foldersmissingordisabledmoduleerror>This module is missing or probably has been disabled by administrator: </foldersmissingordisabledmoduleerror>
+<progstitle>Progs:</progstitle>
+<progsshortcut>progs</progsshortcut>
 </root>

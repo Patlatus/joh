@@ -83,6 +83,11 @@ Ext.define('MyDesktop.LoginForm', {
                 var form = this.up('form').getForm();
                 if (window.xmlconfig.guestmode) {
                     window.xmlconfig.loginForm.hide();
+                    window.xmlconfig.guestmode = true;
+                    window.xmlconfig.userLogged = false;
+                    window.xmlconfig.resultMessage = '';
+                    window.xmlconfig.username = window.xmlconfig['guestmodetitle'] || 'Guest mode';;
+                    window.xmlconfig.userid = -1;
                     myDesktopApp.init();
                     return;
                 };
