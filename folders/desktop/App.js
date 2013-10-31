@@ -12,6 +12,10 @@ Ext.define('MyDesktop.App', {
         'MyDesktop.VideoWindow',
         'MyDesktop.AboutTextWindow',
         'MyDesktop.AddNote',
+        'MyDesktop.Folders',
+        'MyDesktop.FolderDataLoader',
+        'MyDesktop.AudioReader',
+        'MyDesktop.FilesDownloader',
         'MyDesktop.SimpleReader',
         'MyDesktop.RegistrationForm',
         'MyDesktop.LoginForm',
@@ -22,15 +26,28 @@ Ext.define('MyDesktop.App', {
         if (window.xmlconfig.stickersEnabled) {
             modulesToReturn.push(new MyDesktop.AddNote())
         }
+        if (window.xmlconfig.foldersEnabled) {
+            modulesToReturn.push(new MyDesktop.Folders())
+        }
+        if (window.xmlconfig.audioEnabled) {
+            modulesToReturn.push(new MyDesktop.AudioReader())
+        }
+        if (window.xmlconfig.filesDownloaderEnabled) {
+            modulesToReturn.push(new MyDesktop.FilesDownloader())
+        }
         return modulesToReturn;
     },
     
-
-    getCustomModules : function() {
-        var translations = {
+    getTranslations : function() {
+        return {
             'stickers' : 'MyDesktop.AddNote',
-            'addnote' : 'MyDesktop.AddNote'
+            'addnote' : 'MyDesktop.AddNote',
+            'folders' : 'MyDesktop.Folders'
         };
+    },
+    
+    getCustomModules : function() {
+        var translations = this.getTranslations();
         var modules = [];
         for (var i = 0; i < window.xmlconfig.modulesArray.length; i++) {
             var moduleName = window.xmlconfig.modulesArray[i];
@@ -157,7 +174,34 @@ Ext.define('MyDesktop.App', {
         return null;
     },
 
+    /*onFoldersDataLoaded : function () {
+        this.write( 'onFoldersDataLoaded called' );
+        if (window.xmlconfig.languageUpdated && !myDesktopApp.isReady) {
+            if ((window.xmlconfig.userLogged || (window.xmlconfig.guestmodeallowed && window.xmlconfig.guestmode))) {
+                myDesktopApp.init();
+            } else {
+                window.xmlconfig.loginForm.show();
+            }
+        }
+    },*/
+    
+    preprocessCompleted : function () {
+        this.write( 'preprocessCompleted called. Count = ' + window.xmlconfig.preprocesscount);
+        window.xmlconfig.preprocesscount--;
+        if (window.xmlconfig.preprocesscount < 1) {
+            if (window.xmlconfig.languageUpdated && !myDesktopApp.isReady) {
+                if ((window.xmlconfig.userLogged || (window.xmlconfig.guestmodeallowed && window.xmlconfig.guestmode))) {
+                    myDesktopApp.init();
+                } else {
+                    window.xmlconfig.loginForm.show();
+                }
+            }
+        }
+    },
+    
     updateUserLanguage : function () {
+        this.write( 'updateUserLanguage called' );
+        
         if (window.xmlconfig.languagesHash[window.xmlconfig.currentLanguage] === 'present') {
             
         } else {
@@ -187,7 +231,10 @@ Ext.define('MyDesktop.App', {
                     }
                 }
                 if (!window.xmlconfig.lsEnabled) {
-                    myDesktopApp.init();
+                    window.xmlconfig.languageUpdated = true;
+                    if (window.xmlconfig.preprocesscount === 0 && ((window.xmlconfig.foldersEnabled && window.xmlconfig.foldersDataLoaded) || !window.xmlconfig.foldersEnabled)) {
+                        myDesktopApp.init();
+                    }
                     return;
                 }
                 if (window.xmlconfig.guestmode) {
@@ -205,8 +252,11 @@ Ext.define('MyDesktop.App', {
                     window.xmlconfig.loginForm = MyDesktop.LoginForm;
                     window.xmlconfig.loginForm.update();
                     window.xmlconfig.loginForm.render(Ext.getBody());
+                    window.xmlconfig.languageUpdated = true;
                     if (window.xmlconfig.userLogged || (window.xmlconfig.guestmodeallowed && window.xmlconfig.guestmode)) {
-                        myDesktopApp.init();
+                        if (window.xmlconfig.preprocesscount === 0 && ((window.xmlconfig.foldersEnabled && window.xmlconfig.foldersDataLoaded) || !window.xmlconfig.foldersEnabled)) {
+                            myDesktopApp.init();
+                        }
                     } else {
                         window.xmlconfig.loginForm.show();
                     }
@@ -260,6 +310,9 @@ Ext.define('MyDesktop.App', {
                     window.xmlconfig.appsArray = [];
                     window.xmlconfig.appsHash = {};
                     window.xmlconfig.stickersEnabled = true;
+                    window.xmlconfig.foldersEnabled = true;
+                    window.xmlconfig.audioEnabled = true;
+                    window.xmlconfig.filesDownloaderEnabled = true;
                     window.xmlconfig.modulesArray = [];
                     window.xmlconfig.modulesHash = {};
                     
@@ -298,7 +351,22 @@ Ext.define('MyDesktop.App', {
                             currentAppNode = Ext.isIE ? currentAppNode.nextSibling : currentAppNode.nextElementSibling;
                         }
                         var stickersValue = window.xmlconfig.appsHash['stickers'];
-                        window.xmlconfig.stickersEnabled = (stickersValue === 'on' || stickersValue === 'yes');
+                        var foldersValue = window.xmlconfig.appsHash['folders'];
+                        var audioValue = window.xmlconfig.appsHash['audio'];
+                        var fdValue = window.xmlconfig.appsHash['filesDownloader'];
+                        if (Ext.isDefined(stickersValue)) {
+                            window.xmlconfig.stickersEnabled = (stickersValue === 'on' || stickersValue === 'yes');
+                        }
+                        if (Ext.isDefined(foldersValue)) {
+                            window.xmlconfig.foldersEnabled = (foldersValue === 'on' || foldersValue === 'yes');
+                        }
+                        if (Ext.isDefined(audioValue)) {
+                            window.xmlconfig.audioEnabled = (audioValue === 'on' || audioValue === 'yes');
+                        }
+                        if (Ext.isDefined(fdValue)) {
+                            window.xmlconfig.filesDownloaderEnabled = (fdValue === 'on' || fdValue === 'yes');
+                        }
+                        
                     }
                     var modules = response.responseXML.getElementsByTagName("modules")[0];
 
@@ -331,6 +399,39 @@ Ext.define('MyDesktop.App', {
                     if (gValue === 'true' || gValue === 'on' || gValue === 'yes') {
                         window.xmlconfig.guestmode = true;
                     }
+                }
+                
+                window.xmlconfig.preprocesscount = 0;
+                var translations = this.getTranslations();
+                for (var i = 0; i < window.xmlconfig.modulesArray.length; i++) {
+                    var moduleName = window.xmlconfig.modulesArray[i];
+                    if (!moduleName) {
+                        this.write('Preprocessing routine. Empty custom module name');
+                        continue;
+                    }
+                    var parentModuleName = window.xmlconfig.modulesHash[moduleName].parent
+                    if (!parentModuleName) {
+                        this.write('Preprocessing routine. Empty parent of custom module name for module ' + moduleName);
+                        continue;
+                    }
+                    var translatedClassName = translations[parentModuleName];
+                    if (!translatedClassName) {
+                        this.write('Preprocessing routine. Unknown parent parent ' + parentModuleName + ' of custom module name for module ' + moduleName);
+                        continue;
+                    }
+                    if (!Ext.ClassManager.get(translatedClassName).requiresPreprocessing) {
+                        this.write("Preprocessing routine. This module doesn't require preprocessing.");
+                        continue;
+                    }
+                    window.xmlconfig.preprocesscount++;
+                    Ext.ClassManager.get(translatedClassName).preprocess(moduleName, window.xmlconfig.modulesHash[moduleName], Ext.bind(this.preprocessCompleted, this));
+                }
+                
+                if (window.xmlconfig.foldersEnabled) {
+                    window.xmlconfig.preprocesscount++;
+                    //MyDesktop.FolderDataLoader.loadFoldersData(Ext.bind(this.onFoldersDataLoaded, this));
+                    //MyDesktop.FolderDataLoader.loadFoldersData(Ext.bind(this.preprocessCompleted, this));
+                    MyDesktop.Folders.preprocess(null, null, Ext.bind(this.preprocessCompleted, this));
                 }
                 if (window.xmlconfig.lsEnabled && !window.xmlconfig.guestmode) {
                     Ext.Ajax.request({
@@ -374,6 +475,7 @@ Ext.define('MyDesktop.App', {
     },
     
     init : function () {
+        this.write( 'app init called' );
         this.callParent(arguments);
         Ext.Msg.buttonText.yes = window.xmlconfig.yes || 'Так';
         Ext.Msg.buttonText.no = window.xmlconfig.no || 'Ні';

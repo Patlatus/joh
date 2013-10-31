@@ -49,4 +49,11 @@
 <hiremeastutordefaulttitle>Репетитор потрібен</hiremeastutordefaulttitle>
 <hiremeastutordefaulttext>Привіт.\nМені потрібен репетитор.\nБудь ласка, допоможіть.\nЗаплачу.\nДякую.</hiremeastutordefaulttext>
 <defaultreference>default</defaultreference>
+<folderstitle>Папки:</folderstitle>
+<foldersshortcut>папки</foldersshortcut>
+<audiotitle>Програється аудіо файл:</audiotitle>
+<foldersunknowndatatypeerror>Невідомий тип даних у файлі з іменем: </foldersunknowndatatypeerror>
+<foldersmissingordisabledmoduleerror>Цей модуль відсутній або заблокований адміністратором: </foldersmissingordisabledmoduleerror>
+<progstitle>Програми:</progstitle>
+<progsshortcut>проги</progsshortcut>
 </root>

@@ -15,6 +15,10 @@ Ext.define('Ext.ux.desktop.ShortcutModel', {
     fields: [
        { name: 'name' },
        { name: 'iconCls' },
-       { name: 'module' }
+       { name: 'module' },
+       { name: 'smallIconCls' },
+       { name: 'type' },
+       { name: 'fullpath' },
+       { name: 'data' }
     ]
 });
