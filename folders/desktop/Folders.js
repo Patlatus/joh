@@ -18,6 +18,9 @@ Ext.define('MyDesktop.Folders', {
    statics : {
         requiresPreprocessing : true,
         
+        basefolder : 'music',
+        moduleId : 'folders',
+        
         preprocess : function (moduleName, hash, callback) {
             var supercls = Ext.ClassManager.get(this.superclass.$className);
             this.readString = supercls.readString;
@@ -260,5 +263,52 @@ Ext.define('MyDesktop.Folders', {
             iconCls : this.desktopiconcss,
             module : this.moduleId
         } : null;
+    },
+    
+    recursiveSearch : function (foldersData, path) {
+        for (var i = 0; i < foldersData.length; i++) {
+            if (foldersData[i].type === 'folder' && foldersData[i].fullpath.toLowerCase() === path.toLowerCase()) {
+                return {
+                    success : true,
+                    record : foldersData[i]
+                }
+            }
+        }
+        for (var i = 0; i < foldersData.length; i++) {
+            if (foldersData[i].type === 'folder') {
+                var record = this.recursiveSearch(foldersData[i].data, path);
+                if (record.success) {
+                    return record;
+                }
+            }
+        }
+        return {
+            success : false,
+            record : null
+        }
+    },
+    
+    openFolder : function (path) {
+        fList = path.split('|');
+        this.write('fList : ' + fList);
+        if (fList.length > 0) {
+            this.write('fList[0] : ' + fList[0].toLowerCase());
+            if (this.basefolder.toLowerCase() !== fList[0].toLowerCase()) {
+                this.write('Root folder ' + fList[0].toLowerCase() + ' is different from base folder of module ' + this.basefolder.toLowerCase());
+                return;
+            }
+            //fList.shift();
+            var fullpath = fList.join('/');
+            this.write('this.foldersData : ' + this.foldersData + ' ; fullpath fList.join("\") : ' + fullpath);
+            var record = this.recursiveSearch(this.foldersData, fullpath);
+            
+            this.write('record : ' + record.record + ' ; record.success : ' + record.success);
+            
+            if (record.success) {
+                this.createNewWindow(record.record.fullpath, record.record).show();
+            } else {
+                alert('Cannot find folder ' + fullpath)
+            }
+        }
     }
 });
