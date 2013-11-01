@@ -280,6 +280,11 @@ Ext.define('MyDesktop.App', {
         }
     },
     
+    scheduleOpeningFolderForModule : function (moduleId, folderpath) {
+        this.openingFoldersScheduled = this.openingFoldersScheduled || [];
+        this.openingFoldersScheduled.push({'moduleId':moduleId,'folderpath':folderpath});
+    },
+    
     beforeinit : function () {
         window.xmlconfig.settingsLoaded = false;
         window.xmlconfig.userLoaded = false;
@@ -400,7 +405,15 @@ Ext.define('MyDesktop.App', {
                         window.xmlconfig.guestmode = true;
                     }
                 }
-                
+                var lValue = this.getQueryVariable('language');
+                if (window.xmlconfig.languagesHash[lValue] === 'present') {
+                    this.write('Set language to ' + lValue + ' by request parameter');
+                    window.xmlconfig.currentLanguage = lValue;
+                } else {
+                    this.write('Invalid language set try to ' + lValue + ' by request parameter; not found in language hash');
+                }
+
+
                 window.xmlconfig.preprocesscount = 0;
                 var translations = this.getTranslations();
                 for (var i = 0; i < window.xmlconfig.modulesArray.length; i++) {
@@ -427,6 +440,55 @@ Ext.define('MyDesktop.App', {
                     Ext.ClassManager.get(translatedClassName).preprocess(moduleName, window.xmlconfig.modulesHash[moduleName], Ext.bind(this.preprocessCompleted, this));
                 }
                 
+                if (window.xmlconfig.foldersEnabled) {
+                    var fValue = this.getQueryVariable('folder');
+                    this.write('fValue : ' + fValue);
+                    if (fValue) {
+                        fList = fValue.split('|');
+                        this.write('fList : ' + fList);
+                        if (fList.length > 0) {
+                            this.write('fList[0] : ' + fList[0].toLowerCase());
+                            
+                            var found = false;
+                            if (MyDesktop.Folders.basefolder === fList[0].toLowerCase()) {
+                                found = true;
+                                this.scheduleOpeningFolderForModule(MyDesktop.Folders.moduleId, fValue);
+                            } else {
+                                for (var i = 0; i < window.xmlconfig.modulesArray.length; i++) {
+                                    var moduleName = window.xmlconfig.modulesArray[i];
+                                    if (!moduleName) {
+                                        this.write('Search for appropriate module routine. Empty custom module name');
+                                        continue;
+                                    }
+                                    var parentModuleName = window.xmlconfig.modulesHash[moduleName].parent
+                                    if (!parentModuleName) {
+                                        this.write('Search for appropriate module routine. Empty parent of custom module name for module ' + moduleName);
+                                        continue;
+                                    }
+                                    var translatedClassName = translations[parentModuleName];
+                                    if (!translatedClassName) {
+                                        this.write('Search for appropriate module routine. Unknown parent parent ' + parentModuleName + ' of custom module name for module ' + moduleName);
+                                        continue;
+                                    }
+                                    if (parentModuleName != 'folders') {
+                                        this.write('Search for appropriate module routine. Not folders module parent ' + parentModuleName + ' of custom module name for module ' + moduleName);
+                                        continue;
+                                    }
+                                    if (window.xmlconfig.modulesHash[moduleName]['basefolder'] === fList[0].toLowerCase()) {
+                                        found = true;
+                                        this.scheduleOpeningFolderForModule(moduleName, fValue);
+                                        break;
+                                    }
+                                }
+
+                            }
+                            if (!found) {
+                                this.write('Search for appropriate module routine. Not found folders module for path ' + fValue);
+                            }
+                        }
+                        window.xmlconfig.guestmode = true;
+                    }
+                }
                 if (window.xmlconfig.foldersEnabled) {
                     window.xmlconfig.preprocesscount++;
                     //MyDesktop.FolderDataLoader.loadFoldersData(Ext.bind(this.onFoldersDataLoaded, this));
@@ -477,6 +539,22 @@ Ext.define('MyDesktop.App', {
     init : function () {
         this.write( 'app init called' );
         this.callParent(arguments);
+        
+        if (this.openingFoldersScheduled && this.openingFoldersScheduled.length > 0) {
+            for (var i = 0; i < this.openingFoldersScheduled.length; i++) {
+                var module = this.getModule(this.openingFoldersScheduled[i].moduleId);
+                if (!module) {
+                    this.write('Fatal ERROR : Module ' + this.openingFoldersScheduled[i].moduleId + ' is not FOUND!');
+                    continue;
+                }
+                if (!(module instanceof MyDesktop.Folders)) {
+                    this.write('Fatal ERROR : Module ' + this.openingFoldersScheduled[i].moduleId + ' is not instance of Folders!!');
+                    continue;
+                }
+                module.openFolder(this.openingFoldersScheduled[i].folderpath);
+            }
+        }
+
         Ext.Msg.buttonText.yes = window.xmlconfig.yes || 'Так';
         Ext.Msg.buttonText.no = window.xmlconfig.no || 'Ні';
     },
