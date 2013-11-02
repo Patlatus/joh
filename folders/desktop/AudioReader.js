@@ -5,7 +5,7 @@ Ext.define('MyDesktop.AudioReader', {
         return {
             bodyCls : 'x-window-body-default',
             border : false,
-            html: '<audio controls><source src="' + data.fullpath + '" type="audio/' + (data.type == 'mp3' ? 'mpeg' : 'ogg') + '">Your browser does not support the audio element.</audio>'
+            html: '<audio controls><source src="' + data.fullpath + '" type="audio/' + (data.type == 'mp3' ? 'mpeg' : data.type ) + '">Your browser does not support the audio element.</audio>'
         };
     },
     
