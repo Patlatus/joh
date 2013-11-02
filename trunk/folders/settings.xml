@@ -36,6 +36,7 @@
 </hiremeastutor>
 
 <progs>
+<basefolder>progs</basefolder>
 <parent>folders</parent>
 <bigtitlereference>progstitle</bigtitlereference>
 <shorttitlereference>progsshortcut</shorttitlereference>

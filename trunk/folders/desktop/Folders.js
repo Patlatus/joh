@@ -73,8 +73,8 @@ Ext.define('MyDesktop.Folders', {
         return {
             id: this.winId,
             title:winTitle,
-            width:600,
-            height:400,
+            width:screen.width > 600 ? 600 : screen.availWidth,
+            height:screen.height > 400 ? 400 : screen.availHeight,
             iconCls: this.startmenuquicklaunchiconcss,
             animCollapse:false,
             border: false,
@@ -123,8 +123,8 @@ Ext.define('MyDesktop.Folders', {
         return {
             id: winId,
             title:winTitle,
-            width:600,
-            height:400,
+            width:screen.width > 600 ? 600 : screen.availWidth,
+            height:screen.height > 400 ? 400 : screen.availHeight,
             iconCls: data.smallIconCls,
             animCollapse:false,
             border: false,
@@ -181,14 +181,14 @@ Ext.define('MyDesktop.Folders', {
     
     preprocessRawDataFromServer : function (data) {
         for (var i = 0; i < data.length; i++) {
-            data[i].iconCls = this.desktopiconcss;
-            data[i].smallIconCls = this.startmenuquicklaunchiconcss;
+            data[i].iconCls = 'unknown-type-shortcut';
+            data[i].smallIconCls = 'icon-unknown-type';
             if (data[i].type === 'folder') {
                 data[i].module = 'folders';
                 data[i].iconCls = 'folder-shortcut';
                 data[i].smallIconCls = 'icon-folder';
             }
-            if (data[i].type === 'mp3') {
+            if (data[i].type === 'mp3' || data[i].type === 'ogg' || data[i].type === 'wav') {
                 data[i].module = 'audio';
                 data[i].iconCls = 'music-shortcut';
                 data[i].smallIconCls = 'icon-music';
@@ -231,8 +231,8 @@ Ext.define('MyDesktop.Folders', {
         this.startmenuquicklaunchiconcss = this.startmenuquicklaunchiconcss || 'icon-music-folder';
         this.caption = this.caption || window.xmlconfig.folderstitle || 'Folders:';
         this.shortCaption = this.shortCaption || window.xmlconfig.foldersshortcut || 'folders';
-        this.unknowndatatypeerror = this.caption || window.xmlconfig.foldersunknowndatatypeerror || 'Unknown data type of file with name: ';
-        this.missingordisabledmoduleerror = this.caption || window.xmlconfig.foldersmissingordisabledmoduleerror || 'This module is missing or probably has been disabled by administrator: ';
+        this.unknowndatatypeerror = this.unknowndatatypeerror || window.xmlconfig.foldersunknowndatatypeerror || 'Unknown data type of file with name: ';
+        this.missingordisabledmoduleerror = this.missingordisabledmoduleerror || window.xmlconfig.foldersmissingordisabledmoduleerror || 'This module is missing or probably has been disabled by administrator: ';
         this.basefolder = this.basefolder || 'music';
             
         if (!Ext.isDefined(this.foldersDataLoaded)) {
@@ -300,6 +300,10 @@ Ext.define('MyDesktop.Folders', {
             //fList.shift();
             var fullpath = fList.join('/');
             this.write('this.foldersData : ' + this.foldersData + ' ; fullpath fList.join("\") : ' + fullpath);
+            if (this.basefolder.toLowerCase() === fullpath) {
+                this.createWindow().show();
+                return;
+            }
             var record = this.recursiveSearch(this.foldersData, fullpath);
             
             this.write('record : ' + record.record + ' ; record.success : ' + record.success);

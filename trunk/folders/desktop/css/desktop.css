@@ -234,6 +234,10 @@
     background-image: url( ../images/program-group-icon.png );
 }
 
+.unknown-type-shortcut {
+    background-image: url( ../images/Unknown-type.png );
+}
+
 .notepad-shortcut {
     background-image: url(../images/notepadLarge.png);
     width: 46px;
@@ -301,6 +305,10 @@
 }
 .icon-progs{
     background-image:url( ../images/program-group-icon-s.png ) !important;
+}
+
+.icon-unknown-type{
+    background-image:url( ../images/Unknown-type-icon.png ) !important;
 }
 
 .icon-grid {
