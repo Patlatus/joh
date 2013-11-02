@@ -76525,7 +76525,7 @@ Ext.define('MyDesktop.Folders', {
     
     recursiveSearch : function (foldersData, path) {
         for (var i = 0; i < foldersData.length; i++) {
-            if (foldersData[i].type === 'folder' && foldersData[i].fullpath.toLowerCase() === path.toLowerCase()) {
+            if (foldersData[i].fullpath.toLowerCase() === path.toLowerCase()) {
                 return {
                     success : true,
                     record : foldersData[i]
@@ -76567,7 +76567,17 @@ Ext.define('MyDesktop.Folders', {
             this.write('record : ' + record.record + ' ; record.success : ' + record.success);
             
             if (record.success) {
-                this.createNewWindow(record.record.fullpath, record.record).show();
+                var data = this.preprocessRawDataFromServer([record.record])[0];
+                var module = this.app.getModule(data.module);
+                if (!module){
+                    alert(this.missingordisabledmoduleerror + data.module);
+                    return;
+                }
+                win = module && module.createNewWindow(data.fullpath, data);
+                if (win) {
+                    win.show();
+                }
+                //this.createNewWindow(data.fullpath, data).show();
             } else {
                 alert('Cannot find folder ' + fullpath)
             }
