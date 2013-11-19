@@ -9,6 +9,8 @@
 <apps>
 <stickers>off</stickers>
 <folders>on</folders>
+<audio>yes</audio>
+<lyrics>on</lyrics>
 </apps>
 <modules>
 <hiremeastutor>
@@ -42,13 +44,26 @@
 <shorttitlereference>progsshortcut</shorttitlereference>
 <enabledforunauthorizeduser>on</enabledforunauthorizeduser>
 <getfoldersapi>rsdprogs.php</getfoldersapi>
-<basefolder>progs</basefolder>
 <showdesktopicon>on</showdesktopicon>
 <showquicklaunchicon>on</showquicklaunchicon>
 <showstartmenuitem>on</showstartmenuitem>
 <desktopiconcss>progs-shortcut</desktopiconcss>
 <startmenuquicklaunchiconcss>icon-progs</startmenuquicklaunchiconcss>
 </progs>
+
+<lyrics>
+<basefolder>lyrics</basefolder>
+<parent>folders</parent>
+<bigtitlereference>lyricstitle</bigtitlereference>
+<shorttitlereference>lyricsshortcut</shorttitlereference>
+<enabledforunauthorizeduser>on</enabledforunauthorizeduser>
+<getfoldersapi>rsdlyric.php</getfoldersapi>
+<showdesktopicon>on</showdesktopicon>
+<showquicklaunchicon>on</showquicklaunchicon>
+<showstartmenuitem>on</showstartmenuitem>
+<desktopiconcss>lyrics-shortcut</desktopiconcss>
+<startmenuquicklaunchiconcss>icon-lyrics</startmenuquicklaunchiconcss>
+</lyrics>
 
 </modules>
 </root>

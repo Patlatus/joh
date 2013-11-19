@@ -234,6 +234,18 @@
     background-image: url( ../images/program-group-icon.png );
 }
 
+.lyrics-shortcut {
+    background-image: url( ../images/txt.png );
+}
+
+.txt-shortcut {
+    background-image: url( ../images/txt.png );
+}
+
+.html-shortcut {
+    background-image: url( ../images/html.png );
+}
+
 .unknown-type-shortcut {
     background-image: url( ../images/Unknown-type.png );
 }
@@ -297,14 +309,29 @@
 .icon-folder{
     background-image:url( ../images/Folder-icon-s.png ) !important;
 }
+
 .icon-music-folder{
     background-image:url( ../images/Folder-Music-s.png ) !important;
 }
+
 .icon-music{
     background-image:url( ../images/Music-s.png ) !important;
 }
+
 .icon-progs{
     background-image:url( ../images/program-group-icon-s.png ) !important;
+}
+
+.icon-lyrics{
+    background-image:url( ../images/txt-icon.png ) !important;
+}
+
+.icon-txt{
+    background-image:url( ../images/txt-icon.png ) !important;
+}
+
+.icon-html{
+    background-image:url( ../images/html-icon.png ) !important;
 }
 
 .icon-unknown-type{

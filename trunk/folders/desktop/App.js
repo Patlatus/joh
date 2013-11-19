@@ -15,6 +15,7 @@ Ext.define('MyDesktop.App', {
         'MyDesktop.Folders',
         'MyDesktop.FolderDataLoader',
         'MyDesktop.AudioReader',
+        'MyDesktop.TextReader',
         'MyDesktop.FilesDownloader',
         'MyDesktop.SimpleReader',
         'MyDesktop.RegistrationForm',
@@ -31,6 +32,9 @@ Ext.define('MyDesktop.App', {
         }
         if (window.xmlconfig.audioEnabled) {
             modulesToReturn.push(new MyDesktop.AudioReader())
+        }
+        if (window.xmlconfig.lyricsEnabled) {
+            modulesToReturn.push(new MyDesktop.TextReader())
         }
         if (window.xmlconfig.filesDownloaderEnabled) {
             modulesToReturn.push(new MyDesktop.FilesDownloader())
@@ -317,6 +321,7 @@ Ext.define('MyDesktop.App', {
                     window.xmlconfig.stickersEnabled = true;
                     window.xmlconfig.foldersEnabled = true;
                     window.xmlconfig.audioEnabled = true;
+                    window.xmlconfig.lyricsEnabled = true;
                     window.xmlconfig.filesDownloaderEnabled = true;
                     window.xmlconfig.modulesArray = [];
                     window.xmlconfig.modulesHash = {};
@@ -358,7 +363,8 @@ Ext.define('MyDesktop.App', {
                         var stickersValue = window.xmlconfig.appsHash['stickers'];
                         var foldersValue = window.xmlconfig.appsHash['folders'];
                         var audioValue = window.xmlconfig.appsHash['audio'];
-                        var fdValue = window.xmlconfig.appsHash['filesDownloader'];
+                        var lyricsValue = window.xmlconfig.appsHash['lyrics'];
+                        var fdValue = window.xmlconfig.appsHash['filesdownloader'];
                         if (Ext.isDefined(stickersValue)) {
                             window.xmlconfig.stickersEnabled = (stickersValue === 'on' || stickersValue === 'yes');
                         }
@@ -370,6 +376,9 @@ Ext.define('MyDesktop.App', {
                         }
                         if (Ext.isDefined(fdValue)) {
                             window.xmlconfig.filesDownloaderEnabled = (fdValue === 'on' || fdValue === 'yes');
+                        }
+                        if (Ext.isDefined(lyricsValue)) {
+                            window.xmlconfig.lyricsEnabled = (lyricsValue === 'on' || lyricsValue === 'yes');
                         }
                         
                     }

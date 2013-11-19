@@ -53,7 +53,8 @@
 <foldersshortcut>folders</foldersshortcut>
 <audiotitle>Playing audio file:</audiotitle>
 <foldersunknowndatatypeerror>Unknown data type of file with name: </foldersunknowndatatypeerror>
-<foldersmissingordisabledmoduleerror>This module is missing or probably has been disabled by administrator: </foldersmissingordisabledmoduleerror>
+<foldersinvalidconfigurationmissingmoduleerror>Invalid configuration. This module is missing: </foldersinvalidconfigurationmissingmoduleerror>
+<foldersdisabledmoduleerror>This module has been disabled by administrator: </foldersdisabledmoduleerror>
 <progstitle>Progs:</progstitle>
 <progsshortcut>progs</progsshortcut>
 </root>
