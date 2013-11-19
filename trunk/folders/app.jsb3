@@ -955,6 +955,11 @@
                     "path": "desktop/"
                 },
                 {
+                    "clsName": "MyDesktop.TextReader",
+                    "name": "TextReader.js",
+                    "path": "desktop/"
+                },
+                {
                     "clsName": "MyDesktop.FilesDownloader",
                     "name": "FilesDownloader.js",
                     "path": "desktop/"

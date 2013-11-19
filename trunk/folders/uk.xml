@@ -50,11 +50,13 @@
 <hiremeastutordefaulttext>Привіт.\nМені потрібен репетитор.\nБудь ласка, допоможіть.\nЗаплачу.\nДякую.</hiremeastutordefaulttext>
 <defaultreference>default</defaultreference>
 <folderstitle>Папки:</folderstitle>
-<foldersshortcut>папки</foldersshortcut>
+<foldersshortcut>Музика</foldersshortcut>
 <audiotitle>Програється аудіо файл:</audiotitle>
 <foldersunknowndatatypeerror>Невідомий тип даних у файлі з іменем: </foldersunknowndatatypeerror>
 <foldersinvalidconfigurationmissingmoduleerror>Помилкова в налаштуваннях. Цей модуль відсутній: </foldersinvalidconfigurationmissingmoduleerror>
 <foldersdisabledmoduleerror>Цей модуль відсутній або заблокований адміністратором: </foldersdisabledmoduleerror>
 <progstitle>Програми:</progstitle>
-<progsshortcut>проги</progsshortcut>
+<progsshortcut>Проги</progsshortcut>
+<lyricstitle>Вірші:</lyricstitle>
+<lyricsshortcut>Вірші</lyricsshortcut>
 </root>

@@ -50,11 +50,13 @@
 <hiremeastutordefaulttext>Hello.\nI need a tutor.\nPlease help me.\nReady to pay.\nBest regards.</hiremeastutordefaulttext>
 <defaultreference>default</defaultreference>
 <folderstitle>Folders:</folderstitle>
-<foldersshortcut>folders</foldersshortcut>
+<foldersshortcut>Music</foldersshortcut>
 <audiotitle>Playing audio file:</audiotitle>
 <foldersunknowndatatypeerror>Unknown data type of file with name: </foldersunknowndatatypeerror>
 <foldersinvalidconfigurationmissingmoduleerror>Invalid configuration. This module is missing: </foldersinvalidconfigurationmissingmoduleerror>
 <foldersdisabledmoduleerror>This module has been disabled by administrator: </foldersdisabledmoduleerror>
 <progstitle>Progs:</progstitle>
-<progsshortcut>progs</progsshortcut>
+<progsshortcut>Progs</progsshortcut>
+<lyricstitle>Lyrics:</lyricstitle>
+<lyricsshortcut>Lyrics</lyricsshortcut>
 </root>
