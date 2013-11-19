@@ -53,7 +53,8 @@
 <foldersshortcut>папки</foldersshortcut>
 <audiotitle>Програється аудіо файл:</audiotitle>
 <foldersunknowndatatypeerror>Невідомий тип даних у файлі з іменем: </foldersunknowndatatypeerror>
-<foldersmissingordisabledmoduleerror>Цей модуль відсутній або заблокований адміністратором: </foldersmissingordisabledmoduleerror>
+<foldersinvalidconfigurationmissingmoduleerror>Помилкова в налаштуваннях. Цей модуль відсутній: </foldersinvalidconfigurationmissingmoduleerror>
+<foldersdisabledmoduleerror>Цей модуль відсутній або заблокований адміністратором: </foldersdisabledmoduleerror>
 <progstitle>Програми:</progstitle>
 <progsshortcut>проги</progsshortcut>
 </root>

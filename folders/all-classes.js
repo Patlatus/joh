@@ -76424,8 +76424,13 @@ Ext.define('MyDesktop.Folders', {
         if (record.data.module) {
             var me = this,
             module = me.app.getModule(record.data.module);
-            if (!module){
-                alert(this.missingordisabledmoduleerror + module);
+            if (!module) {
+                var value = window.xmlconfig.appsHash[record.data.module];
+                if (value === 'on' || value === 'yes') {
+                    alert(this.invalidconfigurationmissingmoduleerror + record.data.module);
+                } else {
+                    alert(this.disabledmoduleerror + record.data.module);
+                }
                 return;
             }
             win = module && module.createNewWindow(record.data.fullpath, record.data);
@@ -76455,6 +76460,10 @@ Ext.define('MyDesktop.Folders', {
                 data[i].module = 'filesdownloader';
                 data[i].iconCls = 'exe-shortcut';
             }
+            if (data[i].type === 'txt' || data[i].type === 'htm' || data[i].type === 'html') {
+                data[i].module = 'lyrics';
+                data[i].iconCls = 'lyrics-shortcut';
+            }
         }
         return data;
     },
@@ -76478,8 +76487,8 @@ Ext.define('MyDesktop.Folders', {
     
     init : function() {
         this.write = Ext.ClassManager.get(this.superclass.$className).write;
-        this.moduleId = this.moduleId || 'folders';
-        this.winId = this.winId || 'folders';
+        this.moduleId = 'folders' + (this.moduleId || '');
+        this.winId = 'folders' + (this.winId || '');
         this.id = this.moduleId;
         this.unauthorizedallowed = Ext.isDefined(this.unauthorizedallowed) ? this.unauthorizedallowed : true;
         this.showquicklaunchicon = Ext.isDefined(this.showquicklaunchicon) ? this.showquicklaunchicon : true;
@@ -76490,7 +76499,8 @@ Ext.define('MyDesktop.Folders', {
         this.caption = this.caption || window.xmlconfig.folderstitle || 'Folders:';
         this.shortCaption = this.shortCaption || window.xmlconfig.foldersshortcut || 'folders';
         this.unknowndatatypeerror = this.unknowndatatypeerror || window.xmlconfig.foldersunknowndatatypeerror || 'Unknown data type of file with name: ';
-        this.missingordisabledmoduleerror = this.missingordisabledmoduleerror || window.xmlconfig.foldersmissingordisabledmoduleerror || 'This module is missing or probably has been disabled by administrator: ';
+        this.invalidconfigurationmissingmoduleerror = this.invalidconfigurationmissingmoduleerror || window.xmlconfig.foldersinvalidconfigurationmissingmoduleerror || 'Invalid configuration. This module is missing: ';
+        this.disabledmoduleerror = this.disabledmoduleerror || window.xmlconfig.foldersdisabledmoduleerror || 'This module has been disabled by administrator: ';
         this.basefolder = this.basefolder || 'music';
             
         if (!Ext.isDefined(this.foldersDataLoaded)) {
@@ -96300,6 +96310,7 @@ Ext.define('MyDesktop.App', {
         'MyDesktop.Folders',
         'MyDesktop.FolderDataLoader',
         'MyDesktop.AudioReader',
+        'MyDesktop.TextReader',
         'MyDesktop.FilesDownloader',
         'MyDesktop.SimpleReader',
         'MyDesktop.RegistrationForm',
@@ -96316,6 +96327,9 @@ Ext.define('MyDesktop.App', {
         }
         if (window.xmlconfig.audioEnabled) {
             modulesToReturn.push(new MyDesktop.AudioReader())
+        }
+        if (window.xmlconfig.lyricsEnabled) {
+            modulesToReturn.push(new MyDesktop.TextReader())
         }
         if (window.xmlconfig.filesDownloaderEnabled) {
             modulesToReturn.push(new MyDesktop.FilesDownloader())
@@ -96602,6 +96616,7 @@ Ext.define('MyDesktop.App', {
                     window.xmlconfig.stickersEnabled = true;
                     window.xmlconfig.foldersEnabled = true;
                     window.xmlconfig.audioEnabled = true;
+                    window.xmlconfig.lyricsEnabled = true;
                     window.xmlconfig.filesDownloaderEnabled = true;
                     window.xmlconfig.modulesArray = [];
                     window.xmlconfig.modulesHash = {};
@@ -96643,7 +96658,8 @@ Ext.define('MyDesktop.App', {
                         var stickersValue = window.xmlconfig.appsHash['stickers'];
                         var foldersValue = window.xmlconfig.appsHash['folders'];
                         var audioValue = window.xmlconfig.appsHash['audio'];
-                        var fdValue = window.xmlconfig.appsHash['filesDownloader'];
+                        var lyricsValue = window.xmlconfig.appsHash['lyrics'];
+                        var fdValue = window.xmlconfig.appsHash['filesdownloader'];
                         if (Ext.isDefined(stickersValue)) {
                             window.xmlconfig.stickersEnabled = (stickersValue === 'on' || stickersValue === 'yes');
                         }
@@ -96655,6 +96671,9 @@ Ext.define('MyDesktop.App', {
                         }
                         if (Ext.isDefined(fdValue)) {
                             window.xmlconfig.filesDownloaderEnabled = (fdValue === 'on' || fdValue === 'yes');
+                        }
+                        if (Ext.isDefined(lyricsValue)) {
+                            window.xmlconfig.lyricsEnabled = (lyricsValue === 'on' || lyricsValue === 'yes');
                         }
                         
                     }
