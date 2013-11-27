@@ -1,0 +1,33 @@
+﻿
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf8">
+
+    <link rel="stylesheet" type="text/css" href="resources/css/ext-all.css" />
+    <link rel="stylesheet" type="text/css" href="desktop/css/desktop.css" />
+
+    <script type="text/javascript" src="ext-dev.js"></script>
+    <!-- <script type="text/javascript" src="all-classes.js"></script> -->
+
+    <script type="text/javascript">
+        Ext.Loader.setPath({
+            'Ext.ux.desktop': 'desktop/js',
+            MyDesktop: 'desktop'
+        });
+
+        window.xmlconfig = {};
+        
+        Ext.require('Ext.data.reader.Json')
+        Ext.require('MyDesktop.App');
+        Ext.require('MyDesktop.SimpleReader');
+
+        var myDesktopApp;
+        Ext.onReady(function () {
+            myDesktopApp = new MyDesktop.App(); 
+        });
+    </script>
+</head>
+
+<body>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+<alertmessage1>Помилка під час розкодування тексту:</alertmessage1>
+<successtitle>Успіх</successtitle>
+<failedtitle>Невдача</failedtitle>
+<regformtitle>Реєстраційна форма</regformtitle>
+<usernamelabel>Юзернейм</usernamelabel>
+<passwordlabel>Пароль</passwordlabel>
+<passverlabel>Пароль(перевірка)</passverlabel>
+<emaillabel>Електронна пошта</emaillabel>
+<backlabel>Назад</backlabel>
+<resetlabel>Очистити</resetlabel>
+<signuplabel>Зареєструвати</signuplabel>
+<logoutlabel>Вилогуватися</logoutlabel>
+<logformtitle>Форма логування</logformtitle>
+<reglabel>Зареєструватися</reglabel>
+<alertmessage2>поглянь тепер на форму для логування</alertmessage2>
+<loglabel>Залогуватися</loglabel>
+<languagelabel>Мова</languagelabel>
+<successfulloginmessage>Ви успішно залогувалися</successfulloginmessage>
+<wronguserorpasswordmessage>Помилка в імені користувача або в паролі.</wronguserorpasswordmessage>
+<successfulsignupmessage>Ви успішно зареєструвалися. Можете тепер залогуватися.</successfulsignupmessage>
+<dbsignuperror>Помилка в базі даних під час спробі реєстрації.</dbsignuperror>
+<emailalreadyused>Інший користувач вже використовує цей імейл.</emailalreadyused>
+<usernamealreadyused>Інший користувач вже використовує таке ім'я користувача.</usernamealreadyused>
+<invalidemail>Невалідний імейл.</invalidemail>
+<passwordsarenotidentical>Паролі не співпадають.</passwordsarenotidentical>
+<emptyusernameorpassword>Порожнє поле імені користувача чи паролю</emptyusernameorpassword>
+<settings>Налаштування</settings>
+<changesettings>Змінити налаштування</changesettings>
+<addnote>Додати запис</addnote>
+<addnewnote>Додати новий запис</addnewnote>
+<editnote>Редагувати запис</editnote>
+<applychanges>Застосувати зміни</applychanges>
+<titletext>Заголовок</titletext>
+<removenotetitle>Агов!</removenotetitle>
+<removenotetext>Чи Ви справді бажаєте видалити цей милий і прекрасний запис? Цю дію не можна скасувати.</removenotetext>
+<duplicate>Дублювати</duplicate>
+<edit>Редагувати</edit>
+<remove>Видалити</remove>
+<yes>Так</yes>
+<no>Ні</no>
+<start>Старт</start>
+<guestmodelabel>Зайти як гість</guestmodelabel>
+<guestmodetitle>{[(Режим гостя}])</guestmodetitle>
+<doctitle>Мій особистий сайт</doctitle>
+<hiremeastutortitle>Найняти мене як репетитора</hiremeastutortitle>
+<hiremeastutorshortcut>Найняти...</hiremeastutorshortcut>
+<hiremeastutordefaulttitle>Репетитор потрібен</hiremeastutordefaulttitle>
+<hiremeastutordefaulttext>Привіт.\nМені потрібен репетитор.\nБудь ласка, допоможіть.\nЗаплачу.\nДякую.</hiremeastutordefaulttext>
+<defaultreference>default</defaultreference>
+<folderstitle>Папки:</folderstitle>
+<foldersshortcut>Музика</foldersshortcut>
+<audiotitle>Програється аудіо файл:</audiotitle>
+<foldersunknowndatatypeerror>Невідомий тип даних у файлі з іменем: </foldersunknowndatatypeerror>
+<foldersinvalidconfigurationmissingmoduleerror>Помилкова в налаштуваннях. Цей модуль відсутній: </foldersinvalidconfigurationmissingmoduleerror>
+<foldersdisabledmoduleerror>Цей модуль відсутній або заблокований адміністратором: </foldersdisabledmoduleerror>
+<progstitle>Програми:</progstitle>
+<progsshortcut>Проги</progsshortcut>
+<lyricstitle>Вірші:</lyricstitle>
+<lyricsshortcut>Вірші</lyricsshortcut>
+</root>
