@@ -14,7 +14,9 @@
 
         var myDesktopApp;
         Ext.onReady(function () {
-            myDesktopApp = new MyDesktop.App();
+            myDesktopApp = new MyDesktop.App({
+                overrideSettingXmlPath : 'settings.xml'
+            });
         });
     </script>
 </head><body></body></html>
