@@ -63530,6 +63530,8 @@ Ext.define('Ext.ux.desktop.App', {
             'beforeunload'
         );
 
+        window.xmlconfig = Ext.apply(window.xmlconfig || {}, config);
+
         me.mixins.observable.constructor.call(this, config);
 
         if (Ext.isReady) {
@@ -96648,7 +96650,7 @@ Ext.define('MyDesktop.App', {
         };
         window.xmlconfig.WallpaperManager.setWallpaper('wallpapers/isus-wallpaper.jpg');
         Ext.Ajax.request({
-            url: 'settings.xml',
+            url: window.xmlconfig.overrideSettingXmlPath || 'settings.xml',
             params: {
                 
             },

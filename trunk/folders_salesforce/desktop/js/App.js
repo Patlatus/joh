@@ -27,6 +27,8 @@ Ext.define('Ext.ux.desktop.App', {
             'beforeunload'
         );
 
+        window.xmlconfig = Ext.apply(window.xmlconfig || {}, config);
+
         me.mixins.observable.constructor.call(this, config);
 
         if (Ext.isReady) {

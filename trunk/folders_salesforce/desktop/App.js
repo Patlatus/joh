@@ -301,7 +301,7 @@ Ext.define('MyDesktop.App', {
         };
         window.xmlconfig.WallpaperManager.setWallpaper('wallpapers/isus-wallpaper.jpg');
         Ext.Ajax.request({
-            url: 'settings.xml',
+            url: window.xmlconfig.overrideSettingXmlPath || 'settings.xml',
             params: {
                 
             },
